@@ -1,0 +1,40 @@
+<!-- public/login-failure.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login Failed</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffe6e6;
+            color: #cc0000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .message {
+            text-align: center;
+        }
+
+        a {
+            color: #0A6598;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="message">
+        <h1>Login Failed</h1>
+        <p>There was an issue logging you in. Please try again.</p>
+        <a href="/auth/microsoft">Retry Microsoft Login</a>
+    </div>
+</body>
+</html>

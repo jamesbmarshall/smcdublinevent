@@ -1,0 +1,175 @@
+<!-- public/random-image.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Image</title>
+    <style>
+        /* Basic styling for the random image page */
+        body {
+            font-family: Arial, sans-serif;
+            background: #A7079F; /* Fallback color */
+            background: radial-gradient(at left top, #0A6598, #A7079F);
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            background-position: top left;
+            background-size: cover; /* Ensures the gradient covers the entire viewport */
+            text-align: center;
+            padding: 50px;
+        }
+
+        /* Header */
+        h1 {
+            text-align: center;
+            color: #fff; /* Changed to white for better contrast against the gradient */
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5); /* Optional: Adds text shadow for readability */
+        }
+        #randomImageContainer {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        #randomImage {
+            max-width: 100%;
+            max-height: 512px;
+            height: auto;
+            border-radius: 5px;
+        }
+
+        #imageText {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #333;
+        }
+
+        #errorMessage {
+            color: red;
+            margin-top: 20px;
+        }
+
+        #newImageButton {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #0A6598;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #newImageButton:hover {
+            background-color: #094c6c;
+        }
+        #cookie-banner {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 15px;
+            text-align: center;
+            z-index: 1000;
+        }
+        #cookie-banner a {
+            color: #ffd700;
+            text-decoration: underline;
+        }
+        #cookie-banner button {
+            margin-left: 15px;
+            padding: 10px 20px;
+            background-color: #ffd700;
+            color: #000;
+            border: none;
+            cursor: pointer;
+        }
+        #cookie-banner button:hover {
+            background-color: #ffcc00;
+        }
+
+    </style>
+</head>
+<body>
+    <h1>Random Image</h1>
+    <div id="cookie-banner">
+        This website uses cookies to enhance your browsing experience. By continuing to use this website, you consent to the use of cookies. 
+        For more information, please read our <a href="privacy.html">Privacy Policy</a>.
+        <button id="dismiss-button">Dismiss</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const banner = document.getElementById('cookie-banner');
+            const dismissButton = document.getElementById('dismiss-button');
+
+            // Check if the user has already dismissed the banner
+            if (localStorage.getItem('cookieBannerDismissed') === 'true') {
+                banner.style.display = 'none';
+            }
+
+            // Add event listener to the dismiss button
+            dismissButton.addEventListener('click', function () {
+                banner.style.display = 'none';
+                localStorage.setItem('cookieBannerDismissed', 'true');
+            });
+        });
+    </script>
+    <div id="randomImageContainer">
+        <img id="randomImage" src="" alt="Random Image">
+        <p id="imageText"></p>
+    </div>
+    <div>
+        <button id="newImageButton">Get New Random Image</button>
+    </div>
+    <div id="errorMessage"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchRandomImage();
+            document.getElementById('newImageButton').addEventListener('click', fetchRandomImage);
+        });
+
+        async function fetchRandomImage() {
+            const imageElement = document.getElementById('randomImage');
+            const textElement = document.getElementById('imageText');
+            const errorMessage = document.getElementById('errorMessage');
+
+            // Reset content
+            imageElement.src = '';
+            textElement.textContent = '';
+            errorMessage.textContent = '';
+
+            try {
+                const response = await fetch('/random-image');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                imageElement.src = data.image;
+                if (data.text) {
+                    const textResponse = await fetch(data.text);
+                    if (!textResponse.ok) {
+                        throw new Error(`Failed to load text. Status: ${textResponse.status}`);
+                    }
+                    const textData = await textResponse.text();
+                    textElement.textContent = textData;
+                } else {
+                    textElement.textContent = 'No associated text available.';
+                }
+                imageElement.onload = () => {
+                    imageElement.style.opacity = '1';
+                };
+            } catch (error) {
+                console.error('Error fetching random image:', error);
+                errorMessage.textContent = 'Failed to load random image. Please try again later.';
+            }
+        }
+    </script>
+</body>
+</html>
