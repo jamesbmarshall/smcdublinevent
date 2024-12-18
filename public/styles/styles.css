@@ -403,3 +403,14 @@ main {
         font-size: 0.9em;
     }
 }
+
+#imageCount {
+    font-size: 72px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+canvas {
+    border: 1px solid black;
+}
