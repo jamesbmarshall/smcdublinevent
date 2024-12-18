@@ -45,7 +45,6 @@ function startRandomSpin() {
     const maxSpins = 10;
 
     function spinStep() {
-        // Just switch to a random placeholder from the cache
         const randomPlaceholder = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
         imageElement.src = randomPlaceholder;
         imageElement.alt = 'Spinning...';
@@ -55,7 +54,6 @@ function startRandomSpin() {
             interval += 100; 
             setTimeout(spinStep, interval);
         } else {
-            // After spinning finishes, fetch the final image
             fetchFinalRandomImage();
         }
     }
@@ -68,6 +66,17 @@ async function fetchFinalRandomImage() {
     const textElement = document.getElementById('imageText');
     const errorMessage = document.getElementById('errorMessage');
 
+    // Flags to track loading
+    let imageLoaded = false;
+    let textLoaded = false;
+
+    // A helper function to check both flags and apply the pulse
+    function tryApplyPulse() {
+        if (imageLoaded && textLoaded) {
+            imageElement.classList.add('final-image-pulse');
+        }
+    }
+
     try {
         const response = await fetch('/random-image');
         if (!response.ok) {
@@ -75,10 +84,17 @@ async function fetchFinalRandomImage() {
         }
         const data = await response.json();
         
-        // Force a new load for the final image to ensure onload fires
+        // Set the final image with a cache-buster
         imageElement.src = data.image + '?t=' + Date.now(); 
         imageElement.alt = 'Final Random Image';
 
+        // Wait for the image to load
+        imageElement.onload = () => {
+            imageLoaded = true;
+            tryApplyPulse();
+        };
+
+        // Fetch the associated text if it exists
         if (data.text) {
             const textResponse = await fetch(data.text);
             if (!textResponse.ok) {
@@ -91,10 +107,10 @@ async function fetchFinalRandomImage() {
             textElement.textContent = 'No associated text available.';
         }
 
-        // Only now add the pulse effect once the image has fully loaded
-        imageElement.onload = () => {
-            imageElement.classList.add('final-image-pulse');
-        };
+        // Now the text is considered loaded
+        textLoaded = true;
+        tryApplyPulse();
+
     } catch (error) {
         console.error('Error fetching random image:', error);
         errorMessage.textContent = 'Failed to load random image. Please try again later.';
