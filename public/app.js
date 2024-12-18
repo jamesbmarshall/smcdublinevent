@@ -17,6 +17,9 @@ offCanvas.height = canvasHeight;
 
 let socket;
 let reconnectAttempts = 0;
+let heartbeatInterval;
+let missedPongs = 0;
+const maxMissedPongs = 3; // Number of missed pongs before considering the connection lost
 
 function connectWebSocket() {
     // Dynamically determine WebSocket URL
@@ -28,15 +31,23 @@ function connectWebSocket() {
     socket.onopen = () => {
         console.log('Connected to WebSocket server');
         reconnectAttempts = 0; // Reset reconnection attempts
+        missedPongs = 0; // Reset missed pongs
         // Identify this client as a regular client
         socket.send(JSON.stringify({ type: 'client' }));
+
+        // Start the heartbeat
+        startHeartbeat();
     };
 
     // Handle incoming WebSocket messages
     socket.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
-            if (data.images) {
+
+            if (data.type === 'pong') {
+                // Received pong from server
+                missedPongs = 0; // Reset missed pongs counter
+            } else if (data.images) {
                 // Server sends an array of image URLs
                 const newImages = data.images.slice(0, maxImages); // Limit to maxImages
                 console.log('Received images:', newImages);
@@ -54,9 +65,12 @@ function connectWebSocket() {
 
     // Handle WebSocket connection close
     socket.onclose = (event) => {
+        console.log('WebSocket connection closed');
+        clearInterval(heartbeatInterval); // Stop the heartbeat
+
         if (event.wasClean) {
             console.log(
-                `WebSocket connection closed cleanly, code=${event.code} reason=${event.reason}`
+                `Connection closed cleanly, code=${event.code}, reason=${event.reason}`
             );
         } else {
             console.log('WebSocket connection died');
@@ -74,6 +88,23 @@ function connectWebSocket() {
 
 // Initiate the WebSocket connection
 connectWebSocket();
+
+/**
+ * Starts the heartbeat mechanism to keep the WebSocket connection alive.
+ */
+function startHeartbeat() {
+    heartbeatInterval = setInterval(() => {
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ type: 'ping' }));
+            missedPongs++;
+
+            if (missedPongs > maxMissedPongs) {
+                console.warn('Missed pongs exceeded limit. Closing socket.');
+                socket.close();
+            }
+        }
+    }, 10000); // Send a ping every 10 seconds
+}
 
 function updateImages(newImages) {
     images = newImages;

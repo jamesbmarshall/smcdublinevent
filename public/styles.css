@@ -49,3 +49,21 @@
             background-color: #ffcc00;
         }
     
+         /* Connection Status Indicator */
+         .status-indicator {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-left: 10px;
+            vertical-align: middle;
+            border: 1px solid #333;
+        }
+
+        .status-indicator.connected {
+            background-color: #28a745; /* Green */
+        }
+
+        .status-indicator.disconnected {
+            background-color: #dc3545; /* Red */
+        }
