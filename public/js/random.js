@@ -1,17 +1,16 @@
 document.addEventListener('DOMContentLoaded', async () => {
     await loadPlaceholderImages();
     document.getElementById('newImageButton').addEventListener('click', startRandomSpin);
-    // Removed automatic call to startRandomSpin() here
+    // Do not automatically start spin on page load
 });
 
 let placeholderImages = [];
+let didSpin = false; // Track if a spin actually occurred before final image load
 
 async function loadPlaceholderImages() {
     try {
         const response = await fetch('/get-images');
-        if (!response.ok) {
-            throw new Error(`Failed to load images. Status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`Failed to load images. Status: ${response.status}`);
         const data = await response.json();
         placeholderImages = data.images.map(item => item.image).filter(Boolean);
         if (placeholderImages.length === 0) {
@@ -29,20 +28,23 @@ function startRandomSpin() {
     const textElement = document.getElementById('imageText');
     const errorMessage = document.getElementById('errorMessage');
 
-    // Reset content and remove any pulse class
+    // Reset state
     imageElement.classList.remove('final-image-pulse');
     imageElement.src = '';
     imageElement.alt = '';
     textElement.textContent = '';
     errorMessage.textContent = '';
+    didSpin = false; // Will set to true once we start the spinning sequence
 
     if (placeholderImages.length === 0) {
+        // If no placeholders, directly fetch final image (no pulse)
         return fetchFinalRandomImage();
     }
 
     let interval = 100;
     let spinCount = 0;
     const maxSpins = 10;
+    didSpin = true; // We are actually going to spin now
 
     function spinStep() {
         const randomPlaceholder = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
@@ -70,21 +72,21 @@ async function fetchFinalRandomImage() {
     let imageLoaded = false;
     let textLoaded = false;
 
+    // Only apply pulse if we actually spun before final load
     function tryApplyPulse() {
-        if (imageLoaded && textLoaded) {
+        if (didSpin && imageLoaded && textLoaded) {
             imageElement.classList.add('final-image-pulse');
         }
     }
 
     try {
         const response = await fetch('/random-image');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const data = await response.json();
         
-        // Use cache-buster only for final image to ensure onload fires
-        imageElement.src = data.image + '?t=' + Date.now(); 
+        // Cache-bust final image load
+        imageElement.src = data.image + '?t=' + Date.now();
         imageElement.alt = 'Final Random Image';
 
         imageElement.onload = () => {
@@ -93,10 +95,10 @@ async function fetchFinalRandomImage() {
         };
 
         if (data.text) {
-            const textResponse = await fetch(data.text);
-            if (!textResponse.ok) {
-                throw new Error(`Failed to load text. Status: ${textResponse.status}`);
-            }
+            // Cache-bust text as well
+            const textUrl = data.text + '?t=' + Date.now();
+            const textResponse = await fetch(textUrl);
+            if (!textResponse.ok) throw new Error(`Failed to load text. Status: ${textResponse.status}`);
             const textData = await textResponse.text();
             textElement.textContent = textData;
             imageElement.alt = textData;
