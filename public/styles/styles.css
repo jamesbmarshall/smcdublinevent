@@ -287,16 +287,23 @@ main {
     margin: 0 auto; /* Centers the image */
 }
 
+/* Apply card-like styling directly to #imageText */
 #imageText {
     margin-top: 15px;
     font-size: 1em;
     color: #333;
     display: block;
     max-width: 100%; 
-    word-wrap: break-word; /* Ensures text wraps within container width */
+    word-wrap: break-word;
     margin-left: auto;
     margin-right: auto;
-    text-align: left; /* If you'd like left-aligned text */
+    text-align: left;
+    
+    /* Card-like styling similar to .gallery-item */
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    padding: 10px;
 }
 #newImageButton {
     margin-top: 20px;
