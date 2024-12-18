@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async () => {
     await loadPlaceholderImages();
     document.getElementById('newImageButton').addEventListener('click', startRandomSpin);
-    startRandomSpin();
+    // Removed automatic call to startRandomSpin() here
 });
 
 let placeholderImages = [];
@@ -29,7 +29,7 @@ function startRandomSpin() {
     const textElement = document.getElementById('imageText');
     const errorMessage = document.getElementById('errorMessage');
 
-    // Reset content
+    // Reset content and remove any pulse class
     imageElement.classList.remove('final-image-pulse');
     imageElement.src = '';
     imageElement.alt = '';
@@ -54,6 +54,7 @@ function startRandomSpin() {
             interval += 100; 
             setTimeout(spinStep, interval);
         } else {
+            // After spinning finishes, fetch the final image
             fetchFinalRandomImage();
         }
     }
@@ -66,11 +67,9 @@ async function fetchFinalRandomImage() {
     const textElement = document.getElementById('imageText');
     const errorMessage = document.getElementById('errorMessage');
 
-    // Flags to track loading
     let imageLoaded = false;
     let textLoaded = false;
 
-    // A helper function to check both flags and apply the pulse
     function tryApplyPulse() {
         if (imageLoaded && textLoaded) {
             imageElement.classList.add('final-image-pulse');
@@ -84,17 +83,15 @@ async function fetchFinalRandomImage() {
         }
         const data = await response.json();
         
-        // Set the final image with a cache-buster
+        // Use cache-buster only for final image to ensure onload fires
         imageElement.src = data.image + '?t=' + Date.now(); 
         imageElement.alt = 'Final Random Image';
 
-        // Wait for the image to load
         imageElement.onload = () => {
             imageLoaded = true;
             tryApplyPulse();
         };
 
-        // Fetch the associated text if it exists
         if (data.text) {
             const textResponse = await fetch(data.text);
             if (!textResponse.ok) {
@@ -107,7 +104,6 @@ async function fetchFinalRandomImage() {
             textElement.textContent = 'No associated text available.';
         }
 
-        // Now the text is considered loaded
         textLoaded = true;
         tryApplyPulse();
 
