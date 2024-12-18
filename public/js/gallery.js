@@ -15,8 +15,12 @@ let reconnectAttempts = 0;
 let heartbeatInterval;
 let missedPongs = 0;
 const maxMissedPongs = 3; // Number of missed pongs before considering the connection lost
-const retryDelay = 5000; // Delay in milliseconds before retrying fetch
+const retryDelay = 5000; // Delay in milliseconds before retrying fetch when no images are available
 
+/**
+ * Initializes the WebSocket connection to receive real-time updates.
+ * Sends a message to identify as a regular gallery client.
+ */
 function initializeWebSocket() {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host;
@@ -84,11 +88,15 @@ function initializeWebSocket() {
     };
 }
 
+/**
+ * Starts the heartbeat mechanism to keep the WebSocket connection alive.
+ */
 function startHeartbeat() {
     heartbeatInterval = setInterval(() => {
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'ping' }));
             missedPongs++;
+
             if (missedPongs > maxMissedPongs) {
                 console.warn('Missed pongs exceeded limit. Closing socket.');
                 socket.close();
@@ -97,6 +105,10 @@ function startHeartbeat() {
     }, 10000); // Send a ping every 10 seconds
 }
 
+/**
+ * Updates the connection status indicator.
+ * @param {boolean} isConnected - True if connected, false otherwise.
+ */
 function updateConnectionStatus(isConnected) {
     const statusIndicator = document.getElementById('connectionStatus');
     if (statusIndicator) {
@@ -112,25 +124,30 @@ function updateConnectionStatus(isConnected) {
     }
 }
 
+/**
+ * Fetches the list of approved images and their associated texts from the server.
+ * Renders the gallery upon successful retrieval.
+ * If no images are found, it now shows a loading message and retries automatically.
+ */
 async function fetchImages() {
     try {
         const response = await fetch('/get-images', {
             method: 'GET',
-            credentials: 'omit'
+            credentials: 'omit' // No credentials needed as /get-images is public
         });
 
         if (!response.ok) {
-            console.warn(`HTTP error! status: ${response.status}`);
-            // Display loading message and retry
-            displayNoImagesMessage();
-            return;
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
+
+        // Clear any existing content and error messages
         clearError();
 
         if (!data.images || data.images.length === 0) {
-            // No images returned
+            // No images returned yet
+            // Instead of stopping, now display a loading message and retry
             displayNoImagesMessage();
             return;
         }
@@ -139,24 +156,31 @@ async function fetchImages() {
         images = data.images.filter(item => item.image);
 
         if (images.length === 0) {
-            // No valid images found
+            // No valid images found at this time
+            // Show loading and schedule a retry
             displayNoImagesMessage();
             return;
         }
 
+        // If we have valid images, render the gallery
         renderGallery(images);
     } catch (error) {
         console.error('Error fetching images:', error);
-        // Instead of showing a final error, show loading and retry
+        // If an error occurs, show loading message and retry
         displayNoImagesMessage();
     }
 }
 
+/**
+ * Renders the gallery with the provided images.
+ * @param {Array<Object>} images - Array of image objects with 'image' and 'text' URLs.
+ */
 function renderGallery(images) {
     const gallery = document.getElementById('gallery');
     gallery.innerHTML = '';
 
     if (!images || images.length === 0) {
+        // If somehow we end up here with no images, retry again
         displayNoImagesMessage();
         return;
     }
@@ -175,8 +199,11 @@ function renderGallery(images) {
 
         // Create and append the image
         const img = document.createElement('img');
+
         if (item.image && item.image !== 'undefined') {
             img.setAttribute('data-src', item.image);
+
+            // Set a default alt text; will update it when prompt is fetched
             img.alt = `Gallery Image ${index + 1}`;
         } else {
             console.warn(`Image source is undefined for item at index ${index}.`);
@@ -187,14 +214,16 @@ function renderGallery(images) {
 
         // Placeholder image (transparent pixel)
         img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+
         itemDiv.appendChild(img);
 
         // Create and append the associated text
         const textPara = document.createElement('p');
         if (item.text) {
+            // Fetch the associated text content
             fetch(item.text, {
                 method: 'GET',
-                credentials: 'omit'
+                credentials: 'omit' // No credentials needed as text files are public
             })
                 .then(textResponse => {
                     if (!textResponse.ok) {
@@ -204,6 +233,8 @@ function renderGallery(images) {
                 })
                 .then(textData => {
                     textPara.textContent = textData;
+
+                    // Update the alt text of the image with the prompt
                     img.alt = textData;
                 })
                 .catch(textError => {
@@ -222,12 +253,16 @@ function renderGallery(images) {
     initializeLazyLoading();
 }
 
+/**
+ * Initializes lazy loading for images using Intersection Observer.
+ * Observes images with the 'data-src' attribute and loads them when they come into view.
+ */
 function initializeLazyLoading() {
     const lazyImages = document.querySelectorAll('img[data-src]');
     const config = {
-        root: null,
+        root: null, // viewport
         rootMargin: '0px',
-        threshold: 0.1
+        threshold: 0.1 // trigger when 10% of the image is visible
     };
 
     let observer;
@@ -238,11 +273,18 @@ function initializeLazyLoading() {
             observer.observe(image);
         });
     } else {
+        // Fallback for browsers that don't support IntersectionObserver
         lazyImages.forEach(image => {
             loadImage(image);
         });
     }
 
+    /**
+     * Callback for IntersectionObserver entries.
+     * Loads images that are intersecting and unobserves them.
+     * @param {Array} entries - IntersectionObserver entries.
+     * @param {IntersectionObserver} observer - The observer instance.
+     */
     function onIntersection(entries, observer) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -253,6 +295,10 @@ function initializeLazyLoading() {
         });
     }
 
+    /**
+     * Loads an image by setting its 'src' attribute from 'data-src'.
+     * @param {HTMLElement} image - The image element to load.
+     */
     function loadImage(image) {
         const src = image.getAttribute('data-src');
 
@@ -267,42 +313,56 @@ function initializeLazyLoading() {
         };
         image.onerror = () => {
             console.error(`Error loading image: ${src}`);
-            // Optionally handle the error
-            image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
+            // Optionally handle the error, e.g., display a placeholder image
+            image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='; // Transparent pixel
         };
         image.removeAttribute('data-src');
     }
 }
 
+/**
+ * Displays an error message to the user.
+ * @param {string} message - The error message to display.
+ */
 function displayError(message) {
     const errorDiv = document.getElementById('errorMessage');
     if (errorDiv) {
         errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
-    }
-}
-
-function clearError() {
-    const errorDiv = document.getElementById('errorMessage');
-    if (errorDiv) {
-        errorDiv.textContent = '';
-        errorDiv.style.display = 'none';
+        errorDiv.style.display = 'block'; // Ensure the error message is visible
     }
 }
 
 /**
- * Instead of showing "No images available" and stopping, now show a loading message
- * and schedule a retry. This ensures that the script keeps trying until images appear.
+ * Clears any existing error messages.
+ */
+function clearError() {
+    const errorDiv = document.getElementById('errorMessage');
+    if (errorDiv) {
+        errorDiv.textContent = '';
+        errorDiv.style.display = 'none'; // Hide the error message
+    }
+}
+
+/**
+ * Displays a message indicating that no images are currently available.
+ * Instead of stopping, it now shows a loading message and schedules a retry,
+ * ensuring the script keeps trying until images appear.
  */
 function displayNoImagesMessage() {
     const gallery = document.getElementById('gallery');
     if (gallery) {
-        gallery.innerHTML = '<p>Loading images, please wait... Retrying in 5 seconds.</p>';
+        gallery.innerHTML = `<p>Loading images, please wait... Retrying in ${retryDelay/1000} seconds.</p>`;
     }
+    // Schedule a retry
     setTimeout(fetchImages, retryDelay);
 }
 
+/**
+ * Handles real-time updates received via WebSocket by re-rendering the gallery.
+ * @param {Array<Object>} newImages - The updated list of images.
+ */
 function handleWebSocketUpdate(newImages) {
+    // Filter out items without valid image URLs
     images = newImages.filter(item => item.image);
     renderGallery(images);
 }
