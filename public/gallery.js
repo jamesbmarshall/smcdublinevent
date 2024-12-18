@@ -193,13 +193,16 @@ function renderGallery(images) {
 
         if (item.image && item.image !== 'undefined') {
             img.setAttribute('data-src', item.image);
+
+            // Set a default alt text; will update it when prompt is fetched
+            img.alt = `Gallery Image ${index + 1}`;
         } else {
             console.warn(`Image source is undefined for item at index ${index}.`);
             // Set a transparent placeholder image
             img.setAttribute('data-src', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==');
+            img.alt = 'Image not available';
         }
 
-        img.alt = `Gallery Image ${index + 1}`; // Dynamic alt text for accessibility
         // Placeholder image (transparent pixel)
         img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
@@ -221,6 +224,9 @@ function renderGallery(images) {
                 })
                 .then(textData => {
                     textPara.textContent = textData;
+
+                    // Update the alt text of the image with the prompt
+                    img.alt = textData;
                 })
                 .catch(textError => {
                     console.error('Error fetching associated text:', textError);
@@ -237,7 +243,6 @@ function renderGallery(images) {
     // Initialize lazy loading after gallery is populated
     initializeLazyLoading();
 }
-
 /**
  * Initializes lazy loading for images using Intersection Observer.
  * Observes images with the 'data-src' attribute and loads them when they come into view.
