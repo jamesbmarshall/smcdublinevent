@@ -1,5 +1,3 @@
-// public/js/random.js
-
 document.addEventListener('DOMContentLoaded', async () => {
     await loadPlaceholderImages();
     document.getElementById('newImageButton').addEventListener('click', startRandomSpin);
@@ -31,11 +29,12 @@ function startRandomSpin() {
     const textElement = document.getElementById('imageText');
     const errorMessage = document.getElementById('errorMessage');
 
+    // Reset content
+    imageElement.classList.remove('final-image-pulse');
     imageElement.src = '';
     imageElement.alt = '';
     textElement.textContent = '';
     errorMessage.textContent = '';
-    imageElement.classList.remove('final-image-pulse');
 
     if (placeholderImages.length === 0) {
         return fetchFinalRandomImage();
@@ -46,17 +45,17 @@ function startRandomSpin() {
     const maxSpins = 10;
 
     function spinStep() {
+        // Just switch to a random placeholder from the cache
         const randomPlaceholder = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
-        imageElement.src = ''; // Clear first to ensure reload
-        imageElement.src = randomPlaceholder + '?t=' + Date.now(); // Add query param to ensure new request
+        imageElement.src = randomPlaceholder;
         imageElement.alt = 'Spinning...';
-        imageElement.style.opacity = '1';
 
         spinCount++;
         if (spinCount < maxSpins) {
             interval += 100; 
             setTimeout(spinStep, interval);
         } else {
+            // After spinning finishes, fetch the final image
             fetchFinalRandomImage();
         }
     }
@@ -75,13 +74,10 @@ async function fetchFinalRandomImage() {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-
-        // Clear src first to force fresh load
-        imageElement.src = '';
-        // Add a timestamp to ensure this load triggers onload
+        
+        // Force a new load for the final image to ensure onload fires
         imageElement.src = data.image + '?t=' + Date.now(); 
         imageElement.alt = 'Final Random Image';
-        imageElement.style.opacity = '1';
 
         if (data.text) {
             const textResponse = await fetch(data.text);
@@ -95,15 +91,10 @@ async function fetchFinalRandomImage() {
             textElement.textContent = 'No associated text available.';
         }
 
-        // Apply the pulse effect once the image has fully loaded
+        // Only now add the pulse effect once the image has fully loaded
         imageElement.onload = () => {
-            imageElement.classList.remove('final-image-pulse');
-            // Reflow trigger (optional, may not be needed)
-            void imageElement.offsetWidth;
-            // Re-add the class to restart the animation
             imageElement.classList.add('final-image-pulse');
         };
-
     } catch (error) {
         console.error('Error fetching random image:', error);
         errorMessage.textContent = 'Failed to load random image. Please try again later.';

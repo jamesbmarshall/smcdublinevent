@@ -319,7 +319,7 @@ main {
     background-color: #094c6c;
 }
 .final-image-pulse {
-    animation: pulse 0.5s ease-in-out 3; /* Pulses 3 times */
+    animation: pulse 0.5s ease-in-out 3;
 }
 
 @keyframes pulse {
@@ -327,6 +327,7 @@ main {
     50% { transform: scale(1.05); }
     100% { transform: scale(1); }
 }
+
 /* Admin Image Approval Page */
 #pendingImages {
     max-width: 800px;
