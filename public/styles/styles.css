@@ -1,91 +1,108 @@
-html, body {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body.index-page {
-    overflow: hidden; /* No scrolling on index page */
-}
-
-/* For other pages without the .index-page class, 
-   scrolling will be enabled as normal */
-
+/* Base Styles */
 body {
     font-family: Arial, sans-serif;
+    margin: 0;
+    /* Chosen background from the multiple options: a gradient background */
     background: radial-gradient(at left top, #0A6598, #A7079F);
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: top left;
     background-size: cover;
+    min-height: 100vh;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    /* No extra padding or margin at body level */
 }
 
-/* Main container filling the entire viewport */
-main {
-    width: 100%;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between; /* Spread content vertically */
-    align-items: center;
-    box-sizing: border-box;
-    padding: 10px; /* Minimal padding inside main */
-}
-
-/* Responsive #imageCount text */
-#imageCount {
-    font-family: Arial, Helvetica, sans-serif;
-    color: #ffffff;
-    text-align: center;
-    margin: 0;
-    word-wrap: break-word;
-    max-width: 90%;
-
-    /* Use a moderate VW-based size for mobile/smaller screens */
-    font-size: 6vw;
-
-    /* On larger screens, switch to a fixed size to prevent huge text */
-}
-@media (min-width: 1024px) {
-    #imageCount {
-        font-size: 48px; /* Adjust if still too large on desktop */
-    }
-}
-
-/* Container for the canvas */
 #canvas {
+    background: #A7079F; /* Fallback color */
+    background: radial-gradient(at left top, #0A6598, #A7079F);
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Arrange items vertically */
     justify-content: center;
     align-items: center;
-    flex: 1; /* Let it take available space without forcing overflow */
-    width: 100%;
-    box-sizing: border-box;
-    overflow: hidden;
-}
-
-/* Ensure the canvas fits within the available space */
-canvas {
-    border: 1px solid black;
-    max-width: 90%; /* Keep some margin on the sides */
-    height: auto;
-    display: block;
-    margin: 0 auto;
-}
-
-/* Connection status indicator (assuming it's within main, at the bottom) */
-#connectionStatus {
-    font-size: 1em;
-    color: #fff;
-    text-align: center;
+    height: 100vh;
     margin: 0;
 }
 
+/* Skip Link for Accessibility */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #005fcc;
+    color: #fff;
+    padding: 8px 16px;
+    text-decoration: none;
+    z-index: 100;
+}
+.skip-link:focus {
+    top: 0;
+}
+
+/* Headings and Text */
+h1 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    font-size: 2em; /* Relative font size */
+}
+
+h2 {
+    color: #444;
+    margin-top: 20px;
+}
+
+p {
+    color: #666;
+    line-height: 1.6;
+    font-size: 1em;
+}
+
+/* Links, Buttons, and Focus States */
+a:focus, button:focus, img:focus, input[type="file"]:focus, textarea:focus {
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+}
+
+button {
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* Cookie Banner (merged from multiple definitions) */
+#cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #000; /* Ensured sufficient contrast */
+    color: #fff;
+    padding: 15px;
+    text-align: center;
+    z-index: 1000;
+}
+#cookie-banner a {
+    color: #ffd700;
+    text-decoration: underline;
+}
+#cookie-banner button {
+    margin-left: 15px;
+    padding: 10px 20px;
+    background-color: #ffd700;
+    color: #000;
+    border: none;
+}
+#cookie-banner button:hover,
+#cookie-banner button:focus {
+    background-color: #ffcc00;
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+}
+
+/* Status Indicator (merged once) */
 .status-indicator {
     width: 15px;
     height: 15px;
@@ -102,22 +119,21 @@ canvas {
     background-color: #dc3545; /* Red */
 }
 
-/* Error Message, if needed */
+/* Error Message */
 #errorMessage {
     text-align: center;
     color: red;
     font-weight: bold;
+    margin-top: 20px;
     font-size: 1em;
-    margin-top: 10px;
 }
 
-/* Gallery adjustments if present */
+/* Gallery Grid and Items */
 #gallery {
     display: grid;
-    /* Keep padding small to avoid overflow */
-    padding: 10px 0;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 20px 0;
 }
 
 .gallery-item {
@@ -140,11 +156,10 @@ canvas {
     margin-bottom: 10px;
 }
 
-/* Smaller images to ensure they fit in the layout */
 .gallery-item img {
-    width: 100%;
-    height: auto;
-    max-width: 200px;
+    width: 250px;
+    height: 250px;
+    object-fit: cover;
     border-radius: 5px;
     display: block;
     background-color: #e0e0e0;
@@ -162,7 +177,7 @@ canvas {
     white-space: pre-wrap;
 }
 
-/* Upload Container (if present) */
+/* Upload Form Container */
 #upload-container {
     background-color: rgba(255, 255, 255, 0.9);
     padding: 30px;
@@ -242,32 +257,60 @@ canvas {
     color: #dc3545;
 }
 
-/* Random Image Page styling */
+/* Approval Page Styles */
+.container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+ul {
+    padding-left: 20px;
+}
+ul li {
+    margin-bottom: 10px;
+}
+
+/* Random Image Page */
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
 #randomImageContainer {
+    /* Ensure the container fits around the image and text */
     display: inline-block; 
     text-align: center;
-    max-width: 512px;
-    width: 100%;
+    max-width: 512px; /* Optional if you know the max image width */
+    width: 100%; /* Let it scale if desired */
 }
 
 #randomImage {
-    max-width: 100%;
+    max-width: 100%; /* Already present */
     height: auto;
     border-radius: 5px;
     display: block;
-    margin: 0 auto;
+    margin: 0 auto; /* Centers the image */
 }
 
+/* Apply card-like styling directly to #imageText */
 #imageText {
     margin-top: 15px;
     font-size: 1em;
     color: #333;
     display: block;
-    max-width: 100%;
+    max-width: 100%; 
     word-wrap: break-word;
     margin-left: auto;
     margin-right: auto;
     text-align: left;
+    
+    /* Card-like styling similar to .gallery-item */
     background-color: rgba(255, 255, 255, 0.9);
     border-radius: 10px;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -338,18 +381,47 @@ canvas {
     padding: 10px 20px;
 }
 
-/* Adjust gallery columns and sizes for smaller screens */
+/* Responsive Design */
 @media (max-width: 768px) {
     #gallery {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 10px;
-        padding: 10px 0;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        padding: 15px 0;
     }
     .gallery-item img {
-        max-width: 150px;
+        width: 200px;
+        height: 200px;
     }
     .gallery-item p,
     .image-number {
         font-size: 0.9em;
     }
+}
+
+@media (max-width: 480px) {
+    #gallery {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 10px 0;
+    }
+    .gallery-item img {
+        width: 100%;
+        height: auto;
+        max-width: 250px;
+    }
+    .gallery-item p,
+    .image-number {
+        font-size: 0.9em;
+    }
+}
+
+#imageCount {
+    font-size: 72px;
+    font-family: Arial, Helvetica, sans-serif;
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 20px;
+}
+canvas {
+    border: 1px solid black;
 }
