@@ -56,7 +56,8 @@ body {
     align-items: center;
     width: 100%;
     box-sizing: border-box;
-    /* No forced height, so it fits within body padding and available space */
+    /* Added space below the canvas to ensure the indicator isn't cut off */
+    margin-bottom: 20px;
 }
 
 canvas {
@@ -168,31 +169,9 @@ button {
     outline-offset: 2px;
 }
 
-/* Status Indicator */
-.status-indicator {
-    width: 15px;
-    height: 15px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-left: 10px;
-    vertical-align: middle;
-    border: 1px solid #333;
-}
-.status-indicator.connected {
-    background-color: #28a745; /* Green */
-}
-.status-indicator.disconnected {
-    background-color: #dc3545; /* Red */
-}
+/* Status Indicator (Duplicate definitions removed, already defined above) */
 
-/* Error Message */
-#errorMessage {
-    text-align: center;
-    color: red;
-    font-weight: bold;
-    margin-top: 20px;
-    font-size: 1em;
-}
+/* Error Message (Duplicate definitions removed, already defined above) */
 
 /* Gallery Grid and Items */
 #gallery {
