@@ -616,18 +616,21 @@ const adminClients = new Set();
 
 wss.on('connection', ws => {
     console.log('WebSocket client connected.');
+
     ws.on('message', async message => {
         try {
             const data = JSON.parse(message);
             if (data.type === 'admin') {
                 console.log('Admin WebSocket client connected.');
                 adminClients.add(ws);
+                console.log(`Current Admin Clients: ${adminClients.size}, Current Clients: ${clients.size}`);
                 await sendPendingImages(ws);
             } else if (data.type === 'ping') {
                 //Respond with a pong
-                ws.send(JSON.stringify({ type: 'pong'}));
+                ws.send(JSON.stringify({ type: 'pong' }));
             } else {
                 clients.add(ws);
+                console.log(`Regular client connected. Current Admin Clients: ${adminClients.size}, Current Clients: ${clients.size}`);
                 await sendImages(ws);
             }
         } catch (error) {
@@ -636,9 +639,13 @@ wss.on('connection', ws => {
     });
 
     ws.on('close', () => {
-        clients.delete(ws);
+        // When a connection closes, remove from both sets just in case.
+        // The sets won't throw an error if the client isn't present.
         adminClients.delete(ws);
-        console.log('WebSocket client disconnected.');
+        clients.delete(ws);
+
+        console.log(`WebSocket client disconnected.`);
+        console.log(`Current Admin Clients: ${adminClients.size}, Current Clients: ${clients.size}`);
     });
 });
 
