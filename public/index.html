@@ -7,30 +7,43 @@
     <title>Microsoft SMC EMEA Event</title>
 </head>
 <body id="indexbody">
-    <!-- Optional skip link for accessibility -->
+    <!-- Skip link directs users straight to main content -->
     <a class="skip-link" href="#mainContent">Skip to main content</a>
 
-    <div id="cookie-banner">
-        This website uses cookies to enhance your browsing experience. By continuing to use this website, you consent to the use of cookies. 
-        For more information, please read our <a href="privacy.html">Privacy Policy</a>.
-        <button id="dismiss-button">Dismiss</button>
+    <!-- Cookie Banner with dialog semantics -->
+    <div id="cookie-banner" role="dialog" aria-labelledby="cookie-banner-heading" aria-describedby="cookie-banner-description">
+        <h2 id="cookie-banner-heading" style="margin-top:0;">Cookie Usage</h2>
+        <p id="cookie-banner-description">
+            This website uses cookies to enhance your browsing experience. By continuing to use this website, you consent to the use of cookies. 
+            For more information, please read our <a href="privacy.html">Privacy Policy</a>.
+        </p>
+        <button id="dismiss-button" aria-label="Dismiss cookie notification">Dismiss</button>
     </div>
 
-    <div id="index-container">
-        <!-- Responsive image count heading -->
-        <h1 id="imageCount">Images: 0</h1>
+    <!-- Main content area with main landmark -->
+    <main id="mainContent" role="main">
+        <div id="index-container">
+            <!-- Responsive image count heading -->
+            <!-- Confirm if this is the main heading of the page. If not, consider adjusting heading level or adding a more descriptive h1 above it. -->
+            <h1 id="imageCount">Images: 0</h1>
 
-        <!-- Canvas container -->
-        <div id="canvas">
-            <canvas id="imageGrid"></canvas>
+            <!-- Canvas container -->
+            <div id="canvas">
+                <!-- Canvas with an aria-label to describe content (e.g., "A grid of dynamically generated images") -->
+                <canvas id="imageGrid" aria-label="A grid of generated images"></canvas>
+            </div>
+
+            <!-- Connection Status Indicator -->
+            <!-- aria-live to announce status changes and aria-label to describe the status -->
+            <div 
+                id="connectionStatus" 
+                class="status-indicator connected" 
+                title="Connected" 
+                aria-live="polite" 
+                aria-label="Connection Status: Connected">
+            </div>
         </div>
-
-        <!-- Connection Status Indicator -->
-        <div id="connectionStatus" class="status-indicator connected" title="Connected"></div>
-    </div>
-
-    <!-- Hidden main content anchor for skip link -->
-    <div id="mainContent" style="display:none;"></div>
+    </main>
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
