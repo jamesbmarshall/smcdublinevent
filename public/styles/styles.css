@@ -4,7 +4,7 @@ html, body {
     padding: 0;
     box-sizing: border-box;
     height: 100%;
-    overflow: hidden; /* No scrolling on index page */
+    /* overflow: hidden; /* No scrolling on index page */
 }
 
 body {
@@ -54,6 +54,7 @@ body {
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 40px; /* More space below the canvas */
+    max-height: calc(100vh - 200px); /* Leaves room below */
 }
 
 canvas {
