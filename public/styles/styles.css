@@ -1,18 +1,26 @@
 /* Base Styles */
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    /* Chosen background from the multiple options: a gradient background */
+html {
+    margin: 0; 
+    padding: 0; 
+    height: 100%;
     background: radial-gradient(at left top, #0A6598, #A7079F);
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: top left;
     background-size: cover;
-    min-height: 100vh;
-    padding: 20px;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px; /* Creates a margin from all sides */
+    padding: 0;
+    min-height: calc(100vh - 40px); /* Adjust if needed to ensure full content visibility */
     display: flex;
     flex-direction: column;
 }
+
+/* The rest of your styles remain the same */
 
 #canvas {
     background: #A7079F; /* Fallback color */
