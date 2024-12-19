@@ -38,7 +38,8 @@ main {
 
 /* Make #imageCount responsive so it fits without causing scroll */
 #imageCount {
-    font-size: 8vw; /* Scales with viewport width */
+    /* On smaller screens, scale text with the viewport width. */
+    font-size: 8vw; 
     font-family: Arial, Helvetica, sans-serif;
     color: #ffffff;
     text-align: center;
@@ -443,5 +444,13 @@ ul li {
     .gallery-item p,
     .image-number {
         font-size: 0.9em;
+    }
+}
+
+/* When the viewport is larger (e.g., >= 1024px),
+   use a fixed font size to prevent the text from becoming too large. */
+   @media (min-width: 1024px) {
+    #imageCount {
+        font-size: 72px; /* Choose a size that looks good on desktop screens */
     }
 }
