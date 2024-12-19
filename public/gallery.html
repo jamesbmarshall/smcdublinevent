@@ -6,13 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/styles/styles.css">
     <title>Image Gallery | Microsoft SMC EMEA Event</title>
-    
 </head>
 <body>
-    <div id="cookie-banner" role="dialog" aria-labelledby="cookie-banner-title" aria-live="polite">
-        <p id="cookie-banner-title"><strong>Cookie Notice</strong></p>
-        <p>This website uses cookies to enhance your browsing experience. By continuing to use this website, you consent to the use of cookies. For more information, please read our <a href="privacy.html">Privacy Policy</a>.</p>
-        <button id="dismiss-button">Dismiss</button>
+    <!-- Skip link for keyboard navigation -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Cookie Banner as a dialog -->
+    <div id="cookie-banner" role="dialog" aria-labelledby="cookie-banner-title" aria-describedby="cookie-banner-description" aria-modal="true">
+        <h2 id="cookie-banner-title" style="margin-top:0;">Cookie Notice</h2>
+        <p id="cookie-banner-description">
+            This website uses cookies to enhance your browsing experience. By continuing to use this website, you consent to the use of cookies. For more information, please read our 
+            <a href="privacy.html">Privacy Policy</a>.
+        </p>
+        <button id="dismiss-button" aria-label="Dismiss cookie notification">Dismiss</button>
     </div>
 
     <script>
@@ -23,6 +29,9 @@
             // Check if the user has already dismissed the banner
             if (localStorage.getItem('cookieBannerDismissed') === 'true') {
                 banner.style.display = 'none';
+            } else {
+                // Optional: Move focus to the dismiss button when the banner appears
+                dismissButton.focus();
             }
 
             // Add event listener to the dismiss button
@@ -33,18 +42,29 @@
         });
     </script>
 
-    <a href="#main-content" class="skip-link">Skip to main content</a>
-
-    <main id="main-content">
+    <!-- Main content area with main landmark -->
+    <main id="main-content" role="main">
         <h1>Image Gallery</h1>
-        <div id="gallery"></div>
+        <!-- Consider how images are displayed in the gallery.
+             Each image should have an alt text or aria-label for accessibility. -->
+        <div id="gallery">
+            <!-- Dynamically generated images go here. Ensure accessibility when adding images. -->
+        </div>
+        <!-- Alerts for errors (already aria-live) -->
         <div id="errorMessage" role="alert" aria-live="polite"></div>
     </main>
 
     <!-- Connection Status Indicator -->
-    <div id="connectionStatus" class="status-indicator connected" title="Connected"></div>
+    <!-- aria-live and aria-label so that changes in connection status are announced -->
+    <div 
+        id="connectionStatus" 
+        class="status-indicator connected" 
+        title="Connected" 
+        aria-label="Connection status: Connected"
+        aria-live="polite">
+    </div>
 
-    <!-- Link to the external gallery.js file -->
+    <!-- External JS -->
     <script src="/js/gallery.js"></script>
 </body>
 </html>
