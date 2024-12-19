@@ -34,7 +34,7 @@ function startRandomSpin() {
     imageElement.alt = '';
     textElement.textContent = '';
     errorMessage.textContent = '';
-    didSpin = false; // Will set to true once we start the spinning sequence
+    didSpin = false; // Reset the flag at the start
 
     if (placeholderImages.length === 0) {
         // If no placeholders, directly fetch final image (no pulse)
@@ -44,7 +44,6 @@ function startRandomSpin() {
     let interval = 100;
     let spinCount = 0;
     const maxSpins = 10;
-    didSpin = true; // We are actually going to spin now
 
     function spinStep() {
         const randomPlaceholder = placeholderImages[Math.floor(Math.random() * placeholderImages.length)];
@@ -56,6 +55,8 @@ function startRandomSpin() {
             interval += 100; 
             setTimeout(spinStep, interval);
         } else {
+            // Spinning sequence is complete
+            didSpin = true; // Set didSpin to true after spinning completes
             // After spinning finishes, fetch the final image
             fetchFinalRandomImage();
         }
