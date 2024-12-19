@@ -4,36 +4,100 @@ html, body {
     padding: 0;
     box-sizing: border-box;
     height: 100%;
+    overflow: hidden; /* No scrolling on index page */
 }
 
 body {
     font-family: Arial, sans-serif;
-    /* Provide a margin-like space around all sides */
-    padding: 20px; 
+    /* Provide margin-like space around all sides with padding */
+    padding: 20px;
     background: radial-gradient(at left top, #0A6598, #A7079F);
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: top left;
     background-size: cover;
-    min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-/* Canvas Container */
+/* Container for index page content (optional but recommended) */
+#index-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    box-sizing: border-box;
+    /* No fixed height; let content size naturally */
+}
+
+/* Responsive #imageCount */
+#imageCount {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #ffffff;
+    text-align: center;
+    margin: 0 0 20px 0;
+    /* On smaller screens, scale text by viewport width for responsiveness */
+    font-size: 8vw;
+}
+
+@media (min-width: 768px) {
+    /* On larger screens, use a fixed size to prevent huge text */
+    #imageCount {
+        font-size: 48px;
+    }
+}
+
+/* Canvas container */
 #canvas {
-    background: #A7079F; /* Fallback color */
-    background: radial-gradient(at left top, #0A6598, #A7079F);
     display: flex;
     flex-direction: column; 
     justify-content: center;
     align-items: center;
-    /* Removed height:100vh and margin:0 to respect body padding and allow content to size naturally */
     width: 100%;
     box-sizing: border-box;
+    /* No forced height, so it fits within body padding and available space */
 }
 
-/* Skip Link for Accessibility */
+canvas {
+    border: 1px solid black;
+    display: block;
+    /* Width and height set dynamically by JS */
+}
+
+/* Headings and Text */
+h1 {
+    text-align: center;
+    color: #fff;
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    font-size: 2em; 
+}
+
+h2 {
+    color: #444;
+    margin-top: 20px;
+}
+
+p {
+    color: #666;
+    line-height: 1.6;
+    font-size: 1em;
+}
+
+/* Focus States */
+a:focus, button:focus, img:focus, input[type="file"]:focus, textarea:focus {
+    outline: 2px solid #005fcc;
+    outline-offset: 2px;
+}
+
+button {
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+}
+
+/* Skip Link */
 .skip-link {
     position: absolute;
     top: -40px;
@@ -48,63 +112,39 @@ body {
     top: 0;
 }
 
-/* Headings and Text */
-h1 {
+/* Status Indicator */
+.status-indicator {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+    border: 1px solid #333;
+}
+.status-indicator.connected {
+    background-color: #28a745; 
+}
+.status-indicator.disconnected {
+    background-color: #dc3545; 
+}
+
+/* Error Message */
+#errorMessage {
     text-align: center;
-    color: #fff;
-    margin-bottom: 20px;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-    /* On larger screens, a fixed size is okay */
-    font-size: 2em; 
-}
-
-/* For large headings like #imageCount, make it responsive */
-#imageCount {
-    font-family: Arial, Helvetica, sans-serif;
-    color: #ffffff;
-    text-align: center;
-    margin-bottom: 20px;
-    /* On mobile/smaller screens, scale text by viewport width */
-    font-size: 8vw;
-}
-
-@media (min-width: 768px) {
-    /* On tablets and above, use a fixed size that’s still large but not too big */
-    #imageCount {
-        font-size: 72px;
-    }
-}
-
-h2 {
-    color: #444;
+    color: red;
+    font-weight: bold;
     margin-top: 20px;
-}
-
-p {
-    color: #666;
-    line-height: 1.6;
     font-size: 1em;
 }
 
-/* Links, Buttons, and Focus States */
-a:focus, button:focus, img:focus, input[type="file"]:focus, textarea:focus {
-    outline: 2px solid #005fcc;
-    outline-offset: 2px;
-}
-
-button {
-    cursor: pointer;
-    min-width: 44px;
-    min-height: 44px;
-}
-
-/* Cookie Banner */
+/* Cookie Banner (if used) */
 #cookie-banner {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
-    background-color: #000;
+    background-color: #000; 
     color: #fff;
     padding: 15px;
     text-align: center;

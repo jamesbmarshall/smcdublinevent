@@ -12,6 +12,7 @@ const offCtx = offCanvas.getContext('2d');
 // Dynamically resize the canvas to be a square fitting the screen
 function resizeCanvas() {
     const margin = 40; // Adjust to add some padding around the canvas
+    // Calculate the available size based on window dimensions minus margin
     const size = Math.min(window.innerWidth, window.innerHeight) - margin;
     const finalSize = Math.max(size, 50); // Ensure a minimum size
     
@@ -46,7 +47,7 @@ function connectWebSocket() {
         console.log('Connected to WebSocket server');
         reconnectAttempts = 0;
         missedPongs = 0;
-        // Identify this client as a regular client
+        // Identify this client as a regular gallery client
         socket.send(JSON.stringify({ type: 'client' }));
 
         // Start the heartbeat
