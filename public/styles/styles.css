@@ -4,7 +4,10 @@ html, body {
     padding: 0;
     box-sizing: border-box;
     height: 100%;
-    /* overflow: hidden; /* No scrolling on index page */
+}
+
+.indexbody {
+    overflow: hidden;
 }
 
 body {
@@ -60,7 +63,9 @@ body {
 canvas {
     border: 1px solid black;
     display: block;
-    /* Width and height set dynamically by JS */
+    width: auto;
+    height: auto; 
+    max-height: 100%; /* Ensures canvas doesn't exceed container */
 }
 
 /* Add space above the connection status indicator */
