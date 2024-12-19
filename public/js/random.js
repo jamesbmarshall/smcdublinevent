@@ -76,9 +76,13 @@ async function fetchFinalRandomImage() {
     // Only apply pulse if we actually spun before final load
     function tryApplyPulse() {
         if (didSpin && imageLoaded && textLoaded) {
-            // Wait for the next animation frame to ensure image is rendered
+            // Stack multiple requestAnimationFrames and add a slight delay
             requestAnimationFrame(() => {
-                imageElement.classList.add('final-image-pulse');
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        imageElement.classList.add('final-image-pulse');
+                    }, 50); // Adjust delay as necessary
+                });
             });
         }
     }
@@ -106,19 +110,16 @@ async function fetchFinalRandomImage() {
             const textData = await textResponse.text();
             textElement.textContent = textData;
             imageElement.alt = textData;
-
-            // Mark text as loaded
-            textLoaded = true;
-            // Try applying the pulse in case image has already loaded
-            tryApplyPulse();
         } else {
             textElement.textContent = 'No associated text available.';
-            textLoaded = true;
-            tryApplyPulse();
         }
+
+        textLoaded = true;
+        tryApplyPulse();
 
     } catch (error) {
         console.error('Error fetching random image:', error);
         errorMessage.textContent = 'Failed to load random image. Please try again later.';
     }
 }
+
