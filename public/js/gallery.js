@@ -29,8 +29,8 @@ function initializeWebSocket() {
     socket.onopen = () => {
         console.log('Connected to WebSocket server');
         updateConnectionStatus(true);
-        reconnectAttempts = 0; // Reset reconnection attempts on successful connection
-        missedPongs = 0; // Reset missed pongs
+        reconnectAttempts = 0;
+        missedPongs = 0;
         // Identify this client as a regular gallery client
         socket.send(JSON.stringify({ type: 'client' }));
         clearError(); // Clear any error messages upon successful connection
@@ -71,7 +71,7 @@ function initializeWebSocket() {
         clearInterval(heartbeatInterval); // Stop the heartbeat
 
         if (event.wasClean) {
-            console.log(`Connection closed cleanly, code=${event.code} reason=${event.reason}`);
+            console.log(`Connection closed cleanly, code=${event.code}, reason=${event.reason}`);
         } else {
             console.log('WebSocket connection died');
             displayError('WebSocket connection lost. Attempting to reconnect...');
@@ -93,7 +93,7 @@ function initializeWebSocket() {
  */
 function startHeartbeat() {
     heartbeatInterval = setInterval(() => {
-        if (socket.readyState === WebSocket.OPEN) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'ping' }));
             missedPongs++;
 
@@ -116,10 +116,12 @@ function updateConnectionStatus(isConnected) {
             statusIndicator.classList.add('connected');
             statusIndicator.classList.remove('disconnected');
             statusIndicator.title = 'Connected';
+            statusIndicator.setAttribute('aria-label', 'Connection status: Connected');
         } else {
             statusIndicator.classList.add('disconnected');
             statusIndicator.classList.remove('connected');
             statusIndicator.title = 'Disconnected';
+            statusIndicator.setAttribute('aria-label', 'Connection status: Disconnected');
         }
     }
 }
@@ -127,7 +129,7 @@ function updateConnectionStatus(isConnected) {
 /**
  * Fetches the list of approved images and their associated texts from the server.
  * Renders the gallery upon successful retrieval.
- * If no images are found, it now shows a loading message and retries automatically.
+ * If no images are found, it shows a loading message and retries automatically.
  */
 async function fetchImages() {
     try {
@@ -147,7 +149,6 @@ async function fetchImages() {
 
         if (!data.images || data.images.length === 0) {
             // No images returned yet
-            // Instead of stopping, now display a loading message and retry
             displayNoImagesMessage();
             return;
         }
@@ -157,30 +158,30 @@ async function fetchImages() {
 
         if (images.length === 0) {
             // No valid images found at this time
-            // Show loading and schedule a retry
             displayNoImagesMessage();
             return;
         }
 
-        // If we have valid images, render the gallery
         renderGallery(images);
     } catch (error) {
         console.error('Error fetching images:', error);
-        // If an error occurs, show loading message and retry
         displayNoImagesMessage();
     }
 }
 
 /**
  * Renders the gallery with the provided images.
- * @param {Array<Object>} images - Array of image objects with 'image' and 'text' URLs.
+ * Applies accessibility features:
+ * - The gallery container uses role="list" since it's a set of related items.
+ * - Each gallery item uses role="listitem".
+ * - Each image has a descriptive alt text. If textual prompt is fetched, alt updates to that text.
  */
 function renderGallery(images) {
     const gallery = document.getElementById('gallery');
     gallery.innerHTML = '';
+    gallery.setAttribute('role', 'list'); // Mark the gallery as a list of images
 
     if (!images || images.length === 0) {
-        // If somehow we end up here with no images, retry again
         displayNoImagesMessage();
         return;
     }
@@ -190,6 +191,8 @@ function renderGallery(images) {
     images.forEach((item, index) => {
         const itemDiv = document.createElement('div');
         itemDiv.classList.add('gallery-item');
+        itemDiv.setAttribute('role', 'listitem'); // Each item is a list item
+        itemDiv.setAttribute('aria-label', `Gallery image ${index + 1} of ${totalImages}`); 
 
         // Create and append the image number
         const imageNumber = document.createElement('div');
@@ -203,11 +206,11 @@ function renderGallery(images) {
         if (item.image && item.image !== 'undefined') {
             img.setAttribute('data-src', item.image);
 
-            // Set a default alt text; will update it when prompt is fetched
+            // Initial alt text indicating position in the gallery
             img.alt = `Gallery Image ${index + 1}`;
         } else {
             console.warn(`Image source is undefined for item at index ${index}.`);
-            // Set a transparent placeholder image
+            // Transparent placeholder image
             img.setAttribute('data-src', 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==');
             img.alt = 'Image not available';
         }
@@ -220,10 +223,10 @@ function renderGallery(images) {
         // Create and append the associated text
         const textPara = document.createElement('p');
         if (item.text) {
-            // Fetch the associated text content
+            // Fetch the associated text content to update alt text with descriptive prompt
             fetch(item.text, {
                 method: 'GET',
-                credentials: 'omit' // No credentials needed as text files are public
+                credentials: 'omit' // Public text files
             })
                 .then(textResponse => {
                     if (!textResponse.ok) {
@@ -234,8 +237,8 @@ function renderGallery(images) {
                 .then(textData => {
                     textPara.textContent = textData;
 
-                    // Update the alt text of the image with the prompt
-                    img.alt = textData;
+                    // Update the alt text of the image with the prompt for better accessibility
+                    img.alt = textData || `Gallery Image ${index + 1}`;
                 })
                 .catch(textError => {
                     console.error('Error fetching associated text:', textError);
@@ -255,14 +258,13 @@ function renderGallery(images) {
 
 /**
  * Initializes lazy loading for images using Intersection Observer.
- * Observes images with the 'data-src' attribute and loads them when they come into view.
  */
 function initializeLazyLoading() {
     const lazyImages = document.querySelectorAll('img[data-src]');
     const config = {
-        root: null, // viewport
+        root: null,
         rootMargin: '0px',
-        threshold: 0.1 // trigger when 10% of the image is visible
+        threshold: 0.1
     };
 
     let observer;
@@ -279,12 +281,6 @@ function initializeLazyLoading() {
         });
     }
 
-    /**
-     * Callback for IntersectionObserver entries.
-     * Loads images that are intersecting and unobserves them.
-     * @param {Array} entries - IntersectionObserver entries.
-     * @param {IntersectionObserver} observer - The observer instance.
-     */
     function onIntersection(entries, observer) {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
@@ -295,10 +291,6 @@ function initializeLazyLoading() {
         });
     }
 
-    /**
-     * Loads an image by setting its 'src' attribute from 'data-src'.
-     * @param {HTMLElement} image - The image element to load.
-     */
     function loadImage(image) {
         const src = image.getAttribute('data-src');
 
@@ -313,8 +305,8 @@ function initializeLazyLoading() {
         };
         image.onerror = () => {
             console.error(`Error loading image: ${src}`);
-            // Optionally handle the error, e.g., display a placeholder image
-            image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='; // Transparent pixel
+            image.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=='; 
+            image.alt = 'Image failed to load';
         };
         image.removeAttribute('data-src');
     }
@@ -322,13 +314,14 @@ function initializeLazyLoading() {
 
 /**
  * Displays an error message to the user.
- * @param {string} message - The error message to display.
+ * The errorMessage element should have role="alert" and aria-live="polite" in HTML.
  */
 function displayError(message) {
     const errorDiv = document.getElementById('errorMessage');
     if (errorDiv) {
         errorDiv.textContent = message;
-        errorDiv.style.display = 'block'; // Ensure the error message is visible
+        errorDiv.style.display = 'block'; 
+        // Screen readers will announce the new error due to role="alert" and aria-live
     }
 }
 
@@ -339,30 +332,27 @@ function clearError() {
     const errorDiv = document.getElementById('errorMessage');
     if (errorDiv) {
         errorDiv.textContent = '';
-        errorDiv.style.display = 'none'; // Hide the error message
+        errorDiv.style.display = 'none';
     }
 }
 
 /**
  * Displays a message indicating that no images are currently available.
- * Instead of stopping, it now shows a loading message and schedules a retry,
- * ensuring the script keeps trying until images appear.
+ * Mark this message with role="status" or aria-live in the HTML to let users know it's updating.
  */
 function displayNoImagesMessage() {
     const gallery = document.getElementById('gallery');
     if (gallery) {
+        // This message updates regularly, so aria-live on #gallery or parent would help announce changes
         gallery.innerHTML = `<p>Loading images, please wait... Retrying in ${retryDelay/1000} seconds.</p>`;
     }
-    // Schedule a retry
     setTimeout(fetchImages, retryDelay);
 }
 
 /**
  * Handles real-time updates received via WebSocket by re-rendering the gallery.
- * @param {Array<Object>} newImages - The updated list of images.
  */
 function handleWebSocketUpdate(newImages) {
-    // Filter out items without valid image URLs
     images = newImages.filter(item => item.image);
     renderGallery(images);
 }
