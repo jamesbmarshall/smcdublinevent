@@ -81,7 +81,7 @@ async function fetchFinalRandomImage() {
                 requestAnimationFrame(() => {
                     setTimeout(() => {
                         imageElement.classList.add('final-image-pulse');
-                    }, 100); // Adjust delay as necessary
+                    }, 500); // Adjust delay as necessary
                 });
             });
         }
