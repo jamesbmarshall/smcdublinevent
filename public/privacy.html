@@ -7,7 +7,22 @@
     <title>Privacy Policy</title>
 
 </head>
-<body>
+<body class="non-index-page">
+    <header class="top-nav">
+        <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">
+            <!-- Simple hamburger icon: three bars -->
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+        </button>
+        <nav class="flyout-nav" aria-label="Main navigation">
+            <ul>
+                <li><a href="/gallery.html">Gallery</a></li>
+                <li><a href="/upload.html">Upload</a></li>
+                <li><a href="/privacy.html">Privacy Policy</a></li>
+            </ul>
+        </nav>
+    </header>
     <div class="container">
         <h1>Privacy Policy</h1>
         <p><strong>Last Updated:</strong> December 16th 2024</p>
@@ -55,5 +70,18 @@
         <h2>Changes to This Privacy Policy</h2>
         <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date.</p>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const menuToggle = document.querySelector('.menu-toggle');
+            const flyoutNav = document.querySelector('.flyout-nav');
+    
+            menuToggle.addEventListener('click', () => {
+                const expanded = menuToggle.getAttribute('aria-expanded') === 'true' || false;
+                menuToggle.setAttribute('aria-expanded', !expanded);
+                menuToggle.classList.toggle('open');
+                flyoutNav.classList.toggle('open');
+            });
+        });
+    </script>
 </body>
 </html>
