@@ -38,51 +38,53 @@
 
     <!-- Main content area with main landmark -->
     <main id="main-content" role="main">
-        <h1>Privacy Policy</h1>
-        <p><strong>Last Updated:</strong> December 16th 2024</p>
+        <div class="container">
+            <h1>Privacy Policy</h1>
+            <p><strong>Last Updated:</strong> December 16th 2024</p>
 
-        <h2>Introduction</h2>
-        <p>Welcome to the SMC Dublin Event Website (the "Service"). Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our Service.</p>
+            <h2>Introduction</h2>
+            <p>Welcome to the SMC Dublin Event Website (the "Service"). Your privacy is important to us. This Privacy Policy explains how we collect, use, and protect your information when you use our Service.</p>
 
-        <h2>Data Collection</h2>
-        <p>When you use our Service, we may collect the following types of information:</p>
-        <ul>
-            <li><strong>Personal Information:</strong> This includes information such as your name, email address, and other details you provide when registering or using the Service.</li>
-            <li><strong>Usage Data:</strong> We collect information about how you use the Service, including your IP address, browser type, operating system, and usage patterns.</li>
-        </ul>
+            <h2>Data Collection</h2>
+            <p>When you use our Service, we may collect the following types of information:</p>
+            <ul>
+                <li><strong>Personal Information:</strong> This includes information such as your name, email address, and other details you provide when registering or using the Service.</li>
+                <li><strong>Usage Data:</strong> We collect information about how you use the Service, including your IP address, browser type, operating system, and usage patterns.</li>
+            </ul>
 
-        <h2>Cookie Usage</h2>
-        <p>We use cookies to enhance your experience with our Service. Cookies are small text files stored on your device that help us improve functionality, performance, and security. Here are the types of cookies we use:</p>
-        <ul>
-            <li><strong>Session Cookies:</strong> These cookies are essential for the operation of our Service. They enable you to navigate and use essential features securely. For example, we use session cookies to manage user sessions and maintain state information.
-                <ul>
-                    <li><strong>Cookie Name:</strong> <code>userToken</code></li>
-                    <li><strong>Purpose:</strong> Assigns a unique token to each user to manage sessions.</li>
-                    <li><strong>Duration:</strong> Session-based (expires when you close your browser).</li>
-                </ul>
-            </li>
-        </ul>
+            <h2>Cookie Usage</h2>
+            <p>We use cookies to enhance your experience with our Service. Cookies are small text files stored on your device that help us improve functionality, performance, and security. Here are the types of cookies we use:</p>
+            <ul>
+                <li><strong>Session Cookies:</strong> These cookies are essential for the operation of our Service. They enable you to navigate and use essential features securely. For example, we use session cookies to manage user sessions and maintain state information.
+                    <ul>
+                        <li><strong>Cookie Name:</strong> <code>userToken</code></li>
+                        <li><strong>Purpose:</strong> Assigns a unique token to each user to manage sessions.</li>
+                        <li><strong>Duration:</strong> Session-based (expires when you close your browser).</li>
+                    </ul>
+                </li>
+            </ul>
 
-        <h2>Data Storage and Security</h2>
-        <p>We take data security seriously and have implemented appropriate measures to protect your information. We store your data securely and ensure it is only accessible to authorized personnel.</p>
+            <h2>Data Storage and Security</h2>
+            <p>We take data security seriously and have implemented appropriate measures to protect your information. We store your data securely and ensure it is only accessible to authorized personnel.</p>
 
-        <h2>User Rights</h2>
-        <p>Under GDPR, you have the following rights regarding your data:</p>
-        <ul>
-            <li><strong>Right to Access:</strong> You can request access to the personal data we hold about you.</li>
-            <li><strong>Right to Rectification:</strong> You can request correction of any inaccurate or incomplete data.</li>
-            <li><strong>Right to Erasure:</strong> You can request the deletion of your data, subject to certain conditions.</li>
-            <li><strong>Right to Restrict Processing:</strong> You can request that we restrict the processing of your data under certain circumstances.</li>
-            <li><strong>Right to Data Portability:</strong> You can request that we provide your data in a structured, commonly used, and machine-readable format.</li>
-            <li><strong>Right to Object:</strong> You can object to the processing of your data for specific purposes.</li>
-        </ul>
+            <h2>User Rights</h2>
+            <p>Under GDPR, you have the following rights regarding your data:</p>
+            <ul>
+                <li><strong>Right to Access:</strong> You can request access to the personal data we hold about you.</li>
+                <li><strong>Right to Rectification:</strong> You can request correction of any inaccurate or incomplete data.</li>
+                <li><strong>Right to Erasure:</strong> You can request the deletion of your data, subject to certain conditions.</li>
+                <li><strong>Right to Restrict Processing:</strong> You can request that we restrict the processing of your data under certain circumstances.</li>
+                <li><strong>Right to Data Portability:</strong> You can request that we provide your data in a structured, commonly used, and machine-readable format.</li>
+                <li><strong>Right to Object:</strong> You can object to the processing of your data for specific purposes.</li>
+            </ul>
 
-        <h2>Contact Information</h2>
-        <p>If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:</p>
-        <p><strong>Email:</strong> james.marshall@microsoft.com</p>
+            <h2>Contact Information</h2>
+            <p>If you have any questions or concerns about this Privacy Policy or our data practices, please contact us at:</p>
+            <p><strong>Email:</strong> james.marshall@microsoft.com</p>
 
-        <h2>Changes to This Privacy Policy</h2>
-        <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date.</p>
+            <h2>Changes to This Privacy Policy</h2>
+            <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date.</p>
+        </div>
     </main>
 
     <!-- Connection Status Indicator -->
@@ -113,7 +115,6 @@
             if (localStorage.getItem('cookieBannerDismissed') === 'true') {
                 banner.style.display = 'none';
             } else {
-                // Optional: Move focus to the dismiss button when the banner appears for better dialog accessibility
                 dismissButton.focus();
             }
 
