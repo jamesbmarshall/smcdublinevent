@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <link rel="stylesheet" href="/styles/styles.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Privacy Policy</title>
-
+    <link rel="stylesheet" href="/styles/styles.css">
+    <title>Privacy Policy | Microsoft SMC EMEA Event</title>
 </head>
 <body class="non-index-page">
+    <!-- Skip link for keyboard navigation -->
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+
+    <!-- Navigation header on non-index pages -->
     <header class="top-nav">
         <button class="menu-toggle" aria-label="Open menu" aria-expanded="false">
-            <!-- Simple hamburger icon: three bars -->
             <span class="bar"></span>
             <span class="bar"></span>
             <span class="bar"></span>
@@ -18,12 +20,24 @@
         <nav class="flyout-nav" aria-label="Main navigation">
             <ul>
                 <li><a href="/gallery.html">Gallery</a></li>
-                <li><a href="/upload">Upload</a></li>
+                <li><a href="/upload.html">Upload</a></li>
                 <li><a href="/privacy.html">Privacy Policy</a></li>
             </ul>
         </nav>
     </header>
-    <div class="container">
+
+    <!-- Cookie Banner as a dialog for better accessibility -->
+    <div id="cookie-banner" role="dialog" aria-modal="true" aria-labelledby="cookie-banner-title" aria-describedby="cookie-banner-description">
+        <h2 id="cookie-banner-title" style="margin-top:0;">Cookie Notice</h2>
+        <p id="cookie-banner-description">
+            This website uses cookies to enhance your browsing experience. By continuing to use this website, you consent to the use of cookies. 
+            For more information, please read our <a href="privacy.html">Privacy Policy</a>.
+        </p>
+        <button id="dismiss-button" aria-label="Dismiss cookie notification">Dismiss</button>
+    </div>
+
+    <!-- Main content area with main landmark -->
+    <main id="main-content" role="main">
         <h1>Privacy Policy</h1>
         <p><strong>Last Updated:</strong> December 16th 2024</p>
 
@@ -69,17 +83,43 @@
 
         <h2>Changes to This Privacy Policy</h2>
         <p>We may update this Privacy Policy from time to time. Any changes will be posted on this page with an updated "Last Updated" date.</p>
+    </main>
+
+    <!-- Connection Status Indicator -->
+    <div 
+        id="connectionStatus" 
+        class="status-indicator connected" 
+        title="Connected"
+        aria-label="Connection status: Connected"
+        aria-live="polite">
     </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const menuToggle = document.querySelector('.menu-toggle');
             const flyoutNav = document.querySelector('.flyout-nav');
+            const banner = document.getElementById('cookie-banner');
+            const dismissButton = document.getElementById('dismiss-button');
     
+            // Hamburger toggle
             menuToggle.addEventListener('click', () => {
                 const expanded = menuToggle.getAttribute('aria-expanded') === 'true' || false;
                 menuToggle.setAttribute('aria-expanded', !expanded);
                 menuToggle.classList.toggle('open');
                 flyoutNav.classList.toggle('open');
+            });
+
+            // Cookie banner handling
+            if (localStorage.getItem('cookieBannerDismissed') === 'true') {
+                banner.style.display = 'none';
+            } else {
+                // Optional: Move focus to the dismiss button when the banner appears for better dialog accessibility
+                dismissButton.focus();
+            }
+
+            dismissButton.addEventListener('click', function () {
+                banner.style.display = 'none';
+                localStorage.setItem('cookieBannerDismissed', 'true');
             });
         });
     </script>
