@@ -464,16 +464,32 @@ canvas {
     border: 1px solid black;
 }
 
-/* Black top navigation bar */
+/* Remove padding/margin that could push the nav inward on non-index pages */
+body.non-index-page {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Black top navigation bar flush against the top and sides */
 .top-nav {
     background: #000;
     color: #fff;
-    position: relative;
-    width: 100%;
+    position: fixed;    /* Fix it at the top */
+    top: 0;
+    left: 0;
+    right: 0;           /* Ensures it stretches full width */
     height: 60px;
     display: flex;
     align-items: center;
-    padding: 0 20px;
+    padding: 0 20px;     /* Horizontal padding inside bar if desired */
+    z-index: 9999;       /* Keep it above other elements */
+    box-sizing: border-box;
+}
+
+/* Ensure main content is not hidden behind the fixed nav */
+main {
+    margin-top: 60px; /* Push content below the nav bar's height */
 }
 
 /* Hamburger button */
@@ -484,8 +500,8 @@ canvas {
     display: inline-flex;
     flex-direction: column;
     justify-content: space-around;
-    height: 24px;
     width: 30px;
+    height: 24px;
     padding: 0;
     margin: 0;
     outline: none;
@@ -500,16 +516,17 @@ canvas {
     transition: transform 0.3s ease;
 }
 
-/* Flyout navigation hidden by default */
+/* Flyout nav hidden by default */
 .flyout-nav {
     position: absolute;
-    top: 60px; /* below the top bar */
+    top: 60px;    /* Immediately below the top bar */
     left: 0;
     width: 200px;
     background: #222;
     transform: translateX(-100%);
     transition: transform 0.3s ease;
     padding: 10px 0;
+    box-sizing: border-box;
 }
 
 .flyout-nav ul {
@@ -532,19 +549,15 @@ canvas {
     transform: translateX(0);
 }
 
-/* Accessibility focus styles */
-.flyout-nav li a:focus {
-    outline: 2px solid #fff;
-    outline-offset: 2px;
-}
-
-/* Optional: transform the hamburger icon to an X when menu is open */
+/* Transform hamburger to X when open */
 .menu-toggle.open .bar:nth-child(1) {
     transform: rotate(45deg) translate(5px, 5px);
 }
+
 .menu-toggle.open .bar:nth-child(2) {
     opacity: 0;
 }
+
 .menu-toggle.open .bar:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -5px);
 }
