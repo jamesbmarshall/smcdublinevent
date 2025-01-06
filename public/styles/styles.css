@@ -83,7 +83,7 @@ h1 {
 }
 
 h2 {
-    color: #444;
+    color: #5c5c5c;
     margin-top: 20px;
 }
 
@@ -131,7 +131,7 @@ button {
     border: 1px solid #333;
 }
 .status-indicator.connected {
-    background-color: #28a745; /* Green */
+    background-color: #208636; /* Green */
 }
 .status-indicator.disconnected {
     background-color: #dc3545; /* Red */
@@ -272,7 +272,7 @@ button {
 #upload-form button {
     padding: 10px 20px;
     font-size: 1em;
-    background-color: #28a745;
+    background-color: #208636;
     color: #fff;
     border: none;
     border-radius: 5px;
@@ -299,7 +299,7 @@ button {
     font-size: 1em;
 }
 #message.success {
-    color: #28a745;
+    color: #208636;
 }
 #message.error {
     color: #dc3545;
@@ -411,7 +411,7 @@ main {
     font-size: 16px;
 }
 .approve-button {
-    background: #28a745;
+    background: #208636;
     color: #fff;
 }
 .deny-button {
