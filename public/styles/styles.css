@@ -158,6 +158,9 @@ button {
     text-align: center;
     z-index: 1000;
 }
+#cookie-banner-title{
+    color: #757575;
+}
 #cookie-banner a {
     color: #ffd700;
     text-decoration: underline;
