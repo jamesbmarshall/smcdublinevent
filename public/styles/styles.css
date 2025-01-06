@@ -96,8 +96,12 @@ p {
 #footer {
     text-align: center;
     color: #fff;
-    font-size: 0.5em;
+    font-size: 1em;
 }
+#footer a {
+    color: #fff;
+}
+
 
 /* Focus States */
 a:focus, button:focus, img:focus, input[type="file"]:focus, textarea:focus {
