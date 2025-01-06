@@ -564,3 +564,7 @@ main {
 .menu-toggle.open .bar:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -5px);
 }
+
+#privacy-header{
+    color:#000;
+}
