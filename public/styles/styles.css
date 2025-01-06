@@ -467,10 +467,11 @@ body.non-index-page {
     box-sizing: border-box;
 }
 
-/* Ensure main content is not hidden behind the fixed nav */
-main {
-    margin-top: 60px; /* Push content below the nav bar's height */
-}
+/* Ensure main content is not hidden behind the fixed nav*/
+/*main {
+    /*margin-top: 60px; /* Push content below the nav bar's height */
+/*}
+
 
 /* Hamburger button */
 .menu-toggle {
