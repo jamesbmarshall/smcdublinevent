@@ -12,29 +12,6 @@
 
 </head>
 <body>
-    <div id="cookie-banner">
-        This website uses cookies to enhance your browsing experience. By continuing to use this website, you consent to the use of cookies. 
-        For more information, please read our <a href="privacy.html">Privacy Policy</a>.
-        <button id="dismiss-button">Dismiss</button>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const banner = document.getElementById('cookie-banner');
-            const dismissButton = document.getElementById('dismiss-button');
-
-            // Check if the user has already dismissed the banner
-            if (localStorage.getItem('cookieBannerDismissed') === 'true') {
-                banner.style.display = 'none';
-            }
-
-            // Add event listener to the dismiss button
-            dismissButton.addEventListener('click', function () {
-                banner.style.display = 'none';
-                localStorage.setItem('cookieBannerDismissed', 'true');
-            });
-        });
-    </script>
     <h1>Pending Images</h1>
     <div id="logoutForm">
         <form method="POST" action="/admin/logout">

@@ -39,23 +39,6 @@
         </div>
     </main>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const banner = document.getElementById('cookie-banner');
-            const dismissButton = document.getElementById('dismiss-button');
-
-            // Check if the user has already dismissed the banner
-            if (localStorage.getItem('cookieBannerDismissed') === 'true') {
-                banner.style.display = 'none';
-            }
-
-            // Add event listener to the dismiss button
-            dismissButton.addEventListener('click', function () {
-                banner.style.display = 'none';
-                localStorage.setItem('cookieBannerDismissed', 'true');
-            });
-        });
-    </script>
     <script src="/js/app.js"></script>
 </body>
 </html>
