@@ -93,6 +93,12 @@ p {
     font-size: 1em;
 }
 
+#footer {
+    text-align: center;
+    color: #fff;
+    font-size: 0.5em;
+}
+
 /* Focus States */
 a:focus, button:focus, img:focus, input[type="file"]:focus, textarea:focus {
     outline: 2px solid #005fcc;
