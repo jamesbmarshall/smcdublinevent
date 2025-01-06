@@ -393,7 +393,10 @@ app.get('/admin', (req, res) => {
         return res.sendFile(path.join(__dirname, 'protected-admin', 'admin.html'));
     } else {
         return res.send(`
-            <html>
+            <!DOCTYPE html>
+            <html lang="en">
+            <title>Admin Login</title>
+            </head>
             <body>
                 <h1>Admin Login</h1>
                 <form method="POST" action="/admin/login">
