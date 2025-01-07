@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('/upload-image', {
                 method: 'POST',
                 body: formData,
-                credentials: 'include' // Include cookies for authentication
+                //credentials: 'include' // Include cookies for authentication
             });
 
             if (response.ok) {
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
       logoutButton.addEventListener('click', function() {
           fetch('/logout', {
               method: 'GET',
-              credentials: 'include' // Include cookies in the request
+              //credentials: 'include' // Include cookies in the request
           })
           .then(response => {
               if (response.redirected) {

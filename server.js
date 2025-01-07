@@ -143,7 +143,7 @@ app.use(
         secret: SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
-        cookie: { secure: false }, // Set to true if using HTTPS
+        //cookie: { secure: false }, // Set to true if using HTTPS
     })
 );
 
@@ -381,7 +381,7 @@ app.post('/admin/logout', requireAdminAuth, (req, res) => {
             console.error('Error during admin logout:', err);
             return res.status(500).send('Error logging out.');
         }
-        res.clearCookie('connect.sid');
+        //res.clearCookie('connect.sid');
         console.log('Admin logged out.');
         res.send('Logged out successfully.');
     });
