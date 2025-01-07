@@ -11,6 +11,8 @@ const sharp = require('sharp');
 const path = require('path');
 const passport = require('./passport'); // Import the configured Passport instance
 const { BlobServiceClient } = require('@azure/storage-blob');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const {
     AZURE_STORAGE_CONNECTION_STRING,
@@ -143,7 +145,10 @@ app.use(
         secret: SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
-        //cookie: { secure: false }, // Set to true if using HTTPS
+        cookie: { 
+            secure: process.env.NODE_ENV === 'production',
+            httpOnly: true,
+            sameSite: 'lax' } // Set to true if using HTTPS
     })
 );
 
@@ -151,9 +156,12 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Multer setup for image uploads
 const storage = multer.memoryStorage();
@@ -372,9 +380,15 @@ app.post(
     }
 );
 
+// Limit repeated login attempts
+const adminLoginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 login attempts per window
+    message: 'Too many login attempts from this IP. Please try again later.'
+  });
 
 // Admin login route
-app.post('/admin/login', (req, res) => {
+app.post('/admin/login', adminLoginLimiter, (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
         req.session.isAdmin = true;
