@@ -155,7 +155,24 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.use(helmet());
+app.use(
+    helmet({
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          // Tells browser: images may come from 'self' (our domain), data URLs, and your Azure Blob subdomain
+          "img-src": [
+            "'self'",
+            "data:",
+            `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
+          ],
+          // If you also load images over HTTP (not recommended), you’d have to allow that as well
+          // e.g. "http://<your_storage_account>.blob.core.windows.net"
+        },
+        // You can override other directives here as needed...
+      },
+    })
+  );
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
