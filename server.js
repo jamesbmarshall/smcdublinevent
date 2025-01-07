@@ -210,7 +210,19 @@ function ensureAuthenticated(req, res, next) {
 // Admin authentication middleware
 function requireAdminAuth(req, res, next) {
     if (req.session && req.session.isAdmin) return next();
-    return res.status(403).send('Access denied. Not authenticated as admin.');
+    return res.status(403).send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <link rel="stylesheet" href="/styles/styles.css">
+            <title>Admin Login</title>
+            </head>
+            <body>
+                <h1>Admin</h1>
+                <p>Access denied. Not authenticated as an admin.</p>
+                 <span id="footer"><a href="https://go.microsoft.com/fwlink/?linkid=2259814">Consumer Health Privacy</a> | <a href="https://go.microsoft.com/fwlink/?LinkedId=521839">Privacy & Cookies</a> | <a href="https://go.microsoft.com/fwlink/?LinkID=206977">Terms Of Use</a> | <a href="https://go.microsoft.com/fwlink/?linkid=2196228">Trademarks</a> | &copy; Microsoft 2025</span>
+            </body>
+            </html>
+        `);
 }
 
 // Serve static files (e.g., admin.html, gallery.html)
