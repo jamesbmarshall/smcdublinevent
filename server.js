@@ -381,7 +381,7 @@ app.post('/admin/logout', requireAdminAuth, (req, res) => {
             console.error('Error during admin logout:', err);
             return res.status(500).send('Error logging out.');
         }
-        //res.clearCookie('connect.sid');
+        res.clearCookie('connect.sid');
         console.log('Admin logged out.');
         res.send('Logged out successfully.');
     });
@@ -395,6 +395,7 @@ app.get('/admin', (req, res) => {
         return res.send(`
             <!DOCTYPE html>
             <html lang="en">
+            <link rel="stylesheet" href="/styles/styles.css">
             <title>Admin Login</title>
             </head>
             <body>
@@ -403,6 +404,7 @@ app.get('/admin', (req, res) => {
                     <input type="password" name="password" placeholder="Admin Password" required>
                     <button type="submit">Login</button>
                 </form>
+                 <span id="footer"><a href="https://go.microsoft.com/fwlink/?linkid=2259814">Consumer Health Privacy</a> | <a href="https://go.microsoft.com/fwlink/?LinkedId=521839">Privacy & Cookies</a> | <a href="https://go.microsoft.com/fwlink/?LinkID=206977">Terms Of Use</a> | <a href="https://go.microsoft.com/fwlink/?linkid=2196228">Trademarks</a> | &copy; Microsoft 2025</span>
             </body>
             </html>
         `);
