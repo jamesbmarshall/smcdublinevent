@@ -166,6 +166,11 @@ app.use(
             "data:",
             `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
           ],
+          "connect-src": [
+          "'self'",
+          // Possibly 'data:' if you do data URL requests
+          `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
+        ],
           // If you also load images over HTTP (not recommended), you’d have to allow that as well
           // e.g. "http://<your_storage_account>.blob.core.windows.net"
         },
