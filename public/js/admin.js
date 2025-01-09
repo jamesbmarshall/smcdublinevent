@@ -26,30 +26,44 @@ function initializeWebSocket() {
     socket.onopen = () => {
         console.log('WebSocket connection opened as admin.');
         updateConnectionStatus(true);
-        reconnectAttempts = 0; // Reset reconnection attempts on successful connection
-        missedPongs = 0; // Reset missed pongs
-        // Identify this client as an admin
-        socket.send(JSON.stringify({ type: 'admin' }));
-        clearError(); // Clear any error messages upon successful connection
+        reconnectAttempts = 0;
+        missedPongs = 0;
 
-        // Start the heartbeat
-        startHeartbeat();
+        // Identify this client as an admin
+        socket.send(JSON.stringify({ type: 'admin' })); // CHANGED OR ADDED
+
+        clearError(); // Clear any error messages upon successful connection
+        startHeartbeat(); // Start the heartbeat
     };
 
     socket.onmessage = (event) => {
         try {
             const data = JSON.parse(event.data);
+
             if (data.type === 'pong') {
-                // Received pong from server
                 missedPongs = 0; // Reset missed pongs counter
-            } else if (data.pendingImages) {
+            } 
+            else if (data.pendingImages) {
+                // The server might now return only the images locked for *this* admin,
+                // or an array of objects with lockedBy, etc.
                 console.log('Received updated pending images:', data.pendingImages);
+
+                // If the server returns exactly the subset for this admin, the code below is unchanged:
                 pendingImages = data.pendingImages;
+
+                // If the server returned an array of objects like:
+                // [{ url: "...", lockedBy: "admin_xyz" }, { url: "...", lockedBy: "admin_abc" }, ...]
+                // and you only want items locked to YOU, you might do:
+                // pendingImages = data.pendingImages.filter(item => item.lockedBy === 'myAdminId');
+                // But if your server is already filtering them, no change is needed.
+
                 displayPendingImages(pendingImages);
-            } else if (data.error) {
+            } 
+            else if (data.error) {
                 console.error('WebSocket error:', data.error);
                 displayError(data.error);
-            } else {
+            } 
+            else {
                 console.warn('Unknown message type:', data);
             }
         } catch (error) {
@@ -69,9 +83,7 @@ function initializeWebSocket() {
         clearInterval(heartbeatInterval); // Stop the heartbeat
 
         if (event.wasClean) {
-            console.log(
-                `WebSocket connection closed cleanly, code=${event.code} reason=${event.reason}`
-            );
+            console.log(`WebSocket connection closed cleanly, code=${event.code} reason=${event.reason}`);
         } else {
             console.log('WebSocket connection died');
             displayError('WebSocket connection lost. Attempting to reconnect...');
@@ -79,8 +91,7 @@ function initializeWebSocket() {
 
         // Exponential backoff for reconnection attempts
         reconnectAttempts++;
-        const reconnectDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000); // Cap at 30 seconds
-
+        const reconnectDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
         setTimeout(() => {
             console.log(`Reconnecting to WebSocket server as admin (attempt ${reconnectAttempts})...`);
             initializeWebSocket();
@@ -96,7 +107,6 @@ function startHeartbeat() {
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({ type: 'ping' }));
             missedPongs++;
-
             if (missedPongs > maxMissedPongs) {
                 console.warn('Missed pongs exceeded limit. Closing socket.');
                 socket.close();
@@ -148,12 +158,11 @@ function displayPendingImages(images) {
         imgElement.alt = 'Pending Image';
         imgElement.onerror = () => {
             console.error(`Failed to load image: ${imageSrc}`);
-            imgElement.src = ''; // Remove broken image
+            imgElement.src = '';
         };
 
         // Construct the text file URL by replacing .jpg with .txt
         const textSrc = imageSrc.replace('.jpg', '.txt');
-
         const textPara = document.createElement('p');
         textPara.textContent = 'Loading associated text...';
 
@@ -259,7 +268,7 @@ function displayError(message) {
     const errorDiv = document.getElementById('errorMessage');
     if (errorDiv) {
         errorDiv.textContent = message;
-        errorDiv.style.display = 'block'; // Ensure the error message is visible
+        errorDiv.style.display = 'block';
     }
 }
 
@@ -270,6 +279,6 @@ function clearError() {
     const errorDiv = document.getElementById('errorMessage');
     if (errorDiv) {
         errorDiv.textContent = '';
-        errorDiv.style.display = 'none'; // Hide the error message
+        errorDiv.style.display = 'none';
     }
 }
