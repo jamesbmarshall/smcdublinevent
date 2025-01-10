@@ -686,12 +686,12 @@ wss.on('connection', ws => {
             const data = JSON.parse(message);
             if (data.type === 'admin') {
                 console.log('Admin WebSocket client connected.');
-                ws.send(JSON.stringify({ type: 'initAdminId', adminId }));
-                adminClients.add(ws);
 
                 // Generate a simple unique adminId
                 const adminId = `admin_${Math.random().toString(36).substr(2, 9)}`;
                 adminClientsMap.set(ws, adminId);
+                ws.send(JSON.stringify({ type: 'initAdminId', adminId }));
+                adminClients.add(ws);
 
                 console.log(`Current Admin Clients: ${adminClients.size}, Current Clients: ${clients.size}`);
 
