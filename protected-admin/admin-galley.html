@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Gallery</title>
+    <link rel="stylesheet" href="/styles/styles.css"> <!-- Ensure you have appropriate styles -->
+    <script defer src="/scripts/admin-gallery.js"></script> <!-- Path to the updated admin-gallery.js -->
+</head>
+<body>
+    <header>
+        <h1>Admin Gallery</h1>
+        <div id="connectionStatus" class="disconnected" aria-live="polite" aria-label="Connection status: Disconnected"></div>
+        <form id="logoutForm" method="POST" action="/admin/logout">
+            <button type="submit">Logout</button>
+        </form>
+    </header>
+
+    <main>
+        <div id="errorMessage" role="alert" aria-live="assertive" style="display: none;"></div>
+        <div id="gallery" aria-live="polite"></div>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Your Company Name</p>
+    </footer>
+</body>
+</html>
