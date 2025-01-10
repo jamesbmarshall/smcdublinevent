@@ -4,10 +4,6 @@
  * Establishes a WebSocket connection to receive real-time updates.
  */
 
-// We'll store the admin's unique ID, which the server may provide.
-// For now, we initialize it as null, or you could set it after some handshake.
-let myAdminId = null;
-
 document.addEventListener('DOMContentLoaded', () => {
     initializeWebSocket();
 });
@@ -34,61 +30,46 @@ function initializeWebSocket() {
         missedPongs = 0;
 
         // Identify this client as an admin
-        socket.send(JSON.stringify({ type: 'admin' }));
+        socket.send(JSON.stringify({ type: 'admin' })); // CHANGED OR ADDED
 
         clearError(); // Clear any error messages upon successful connection
         startHeartbeat(); // Start the heartbeat
     };
 
-    let myAdminId = null;  // We'll store the ID once we receive it from the server
+    socket.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
 
-socket.onmessage = (event) => {
-  try {
-    const data = JSON.parse(event.data);
+            if (data.type === 'pong') {
+                missedPongs = 0; // Reset missed pongs counter
+            } 
+            else if (data.pendingImages) {
+                // The server might now return only the images locked for *this* admin,
+                // or an array of objects with lockedBy, etc.
+                console.log('Received updated pending images:', data.pendingImages);
 
-    if (data.type === 'pong') {
-      // Heartbeat response; reset missed pongs
-      missedPongs = 0;
-    }
-    else if (data.type === 'initAdminId') {
-      // The server is telling us our unique admin ID
-      // e.g., { type: 'initAdminId', adminId: 'admin_XYZ123' }
-      myAdminId = data.adminId;
-      console.log(`Received adminId from server: ${myAdminId}`);
-    }
-    else if (data.pendingImages) {
-      // This is the list of pending images the server says we own
-      // e.g., data.pendingImages = [ { url: "...", lockedBy: "admin_XYZ123" }, ... ]
-      console.log('Received updated pending images:', data.pendingImages);
+                // If the server returns exactly the subset for this admin, the code below is unchanged:
+                //pendingImages = data.pendingImages;
 
-      // If the server is returning all items for this admin specifically, 
-      // we can just store them:
-      // pendingImages = data.pendingImages;
+                // If the server returned an array of objects like:
+                // [{ url: "...", lockedBy: "admin_xyz" }, { url: "...", lockedBy: "admin_abc" }, ...]
+                // and you only want items locked to YOU, you might do:
+                pendingImages = data.pendingImages.filter(item => item.lockedBy === 'myAdminId');
+                // But if your server is already filtering them, no change is needed.
 
-      // If the server sends items for ALL admins, you can filter:
-      if (myAdminId) {
-        pendingImages = data.pendingImages.filter(item => item.lockedBy === myAdminId);
-      } else {
-        // If we don't yet have an admin ID for some reason, just store them all
-        pendingImages = data.pendingImages;
-      }
-
-      // Now each element is like { url: "...", lockedBy: "..." }
-      // We only pass the URLs to display
-      const imageUrls = pendingImages.map(obj => obj.url);
-      displayPendingImages(imageUrls);
-    }
-    else if (data.error) {
-      console.error('WebSocket error:', data.error);
-      displayError(data.error);
-    }
-    else {
-      console.warn('Unknown message type:', data);
-    }
-  } catch (error) {
-    console.error('Error parsing WebSocket message:', error);
-  }
-};
+                displayPendingImages(pendingImages);
+            } 
+            else if (data.error) {
+                console.error('WebSocket error:', data.error);
+                displayError(data.error);
+            } 
+            else {
+                console.warn('Unknown message type:', data);
+            }
+        } catch (error) {
+            console.error('Error parsing WebSocket message:', error);
+        }
+    };
 
     socket.onerror = (error) => {
         console.error('WebSocket error:', error);
@@ -161,7 +142,7 @@ function displayPendingImages(images) {
     const pendingImagesContainer = document.getElementById('pendingImages');
     pendingImagesContainer.innerHTML = ''; // Clear existing content
 
-    if (!images || images.length === 0) {
+    if (images.length === 0) {
         const noImagesMessage = document.createElement('p');
         noImagesMessage.textContent = 'No pending images.';
         pendingImagesContainer.appendChild(noImagesMessage);
@@ -236,8 +217,8 @@ function approveImage(imageSrc) {
     .then(response => {
         if (response.ok) {
             // Remove the approved image from the array and update the UI
-            pendingImages = pendingImages.filter(obj => obj.url !== imageSrc);
-            displayPendingImages(pendingImages.map(obj => obj.url));
+            pendingImages = pendingImages.filter(img => img !== imageSrc);
+            displayPendingImages(pendingImages);
         } else {
             return response.text().then(text => {
                 throw new Error(text || 'Failed to approve image.');
@@ -265,8 +246,8 @@ function denyImage(imageSrc) {
     .then(response => {
         if (response.ok) {
             // Remove the denied image from the array and update the UI
-            pendingImages = pendingImages.filter(obj => obj.url !== imageSrc);
-            displayPendingImages(pendingImages.map(obj => obj.url));
+            pendingImages = pendingImages.filter(img => img !== imageSrc);
+            displayPendingImages(pendingImages);
         } else {
             return response.text().then(text => {
                 throw new Error(text || 'Failed to deny image.');
