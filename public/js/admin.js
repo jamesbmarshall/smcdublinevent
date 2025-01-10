@@ -49,12 +49,12 @@ function initializeWebSocket() {
                 console.log('Received updated pending images:', data.pendingImages);
 
                 // If the server returns exactly the subset for this admin, the code below is unchanged:
-                //pendingImages = data.pendingImages;
+                pendingImages = data.pendingImages;
 
                 // If the server returned an array of objects like:
                 // [{ url: "...", lockedBy: "admin_xyz" }, { url: "...", lockedBy: "admin_abc" }, ...]
                 // and you only want items locked to YOU, you might do:
-                pendingImages = data.pendingImages.filter(item => item.lockedBy === 'myAdminId');
+                // pendingImages = data.pendingImages.filter(item => item.lockedBy === 'myAdminId');
                 // But if your server is already filtering them, no change is needed.
 
                 displayPendingImages(pendingImages);
