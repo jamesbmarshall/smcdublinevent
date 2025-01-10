@@ -40,7 +40,7 @@ function initializeWebSocket() {
         startHeartbeat(); // Start the heartbeat
     };
 
-    //let myAdminId = null;  // We'll store the ID once we receive it from the server
+    let myAdminId = null;  // We'll store the ID once we receive it from the server
 
 socket.onmessage = (event) => {
   try {
