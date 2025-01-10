@@ -124,7 +124,7 @@ function updateImages(newImages) {
 function updateImageCount() {
     const imageCountElement = document.getElementById('imageCount');
     if (imageCountElement) {
-        imageCountElement.textContent = `Images: ${images.length} / ${maxImages}`;
+        imageCountElement.textContent = `Images: ${images.length}`;
     }
 }
 
