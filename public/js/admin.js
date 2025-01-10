@@ -4,11 +4,14 @@
  * Establishes a WebSocket connection to receive real-time updates.
  */
 
+// We'll store the admin's unique ID that the server provides.
+let myAdminId = null; 
+
 document.addEventListener('DOMContentLoaded', () => {
     initializeWebSocket();
 });
 
-let pendingImages = [];
+let pendingImages = []; // Each item: { url, lockedBy }
 let socket;
 let reconnectAttempts = 0;
 let heartbeatInterval;
@@ -30,7 +33,7 @@ function initializeWebSocket() {
         missedPongs = 0;
 
         // Identify this client as an admin
-        socket.send(JSON.stringify({ type: 'admin' })); // CHANGED OR ADDED
+        socket.send(JSON.stringify({ type: 'admin' }));
 
         clearError(); // Clear any error messages upon successful connection
         startHeartbeat(); // Start the heartbeat
@@ -40,32 +43,52 @@ function initializeWebSocket() {
         try {
             const data = JSON.parse(event.data);
 
+            // Heartbeat pong
             if (data.type === 'pong') {
-                missedPongs = 0; // Reset missed pongs counter
-            } 
-            else if (data.pendingImages) {
-                // The server might now return only the images locked for *this* admin,
-                // or an array of objects with lockedBy, etc.
+                missedPongs = 0; 
+                return;
+            }
+
+            // The server is giving us a unique admin ID:
+            if (data.type === 'initAdminId') {
+                myAdminId = data.adminId; // e.g. "admin_abc123"
+                console.log(`Received adminId: ${myAdminId}`);
+                return;
+            }
+
+            // The server is sending updated pending images:
+            if (data.pendingImages) {
                 console.log('Received updated pending images:', data.pendingImages);
 
-                // If the server returns exactly the subset for this admin, the code below is unchanged:
+                // data.pendingImages might look like:
+                // [ { url: "https://.../image_123.jpg", lockedBy: "admin_abc123" }, ... ]
+
+                // If the server is *already* sending only items locked by *this* admin,
+                // we can accept them directly:
                 pendingImages = data.pendingImages;
 
-                // If the server returned an array of objects like:
-                // [{ url: "...", lockedBy: "admin_xyz" }, { url: "...", lockedBy: "admin_abc" }, ...]
-                // and you only want items locked to YOU, you might do:
-                // pendingImages = data.pendingImages.filter(item => item.lockedBy === 'myAdminId');
-                // But if your server is already filtering them, no change is needed.
+                // Or, if the server is sending *all* items for every admin,
+                // we can locally filter:
+                // if (myAdminId) {
+                //     pendingImages = data.pendingImages.filter(item => item.lockedBy === myAdminId);
+                // } else {
+                //     // If we haven't received an adminId yet for some reason,
+                //     // just store them. (But typically you'd wait for initAdminId)
+                //     pendingImages = data.pendingImages;
+                // }
 
                 displayPendingImages(pendingImages);
-            } 
-            else if (data.error) {
+                return;
+            }
+
+            // Check for error
+            if (data.error) {
                 console.error('WebSocket error:', data.error);
                 displayError(data.error);
-            } 
-            else {
-                console.warn('Unknown message type:', data);
+                return;
             }
+
+            console.warn('Unknown message type:', data);
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);
         }
@@ -83,15 +106,15 @@ function initializeWebSocket() {
         clearInterval(heartbeatInterval); // Stop the heartbeat
 
         if (event.wasClean) {
-            console.log(`WebSocket connection closed cleanly, code=${event.code} reason=${event.reason}`);
+            console.log(`Connection closed cleanly, code=${event.code}, reason=${event.reason}`);
         } else {
             console.log('WebSocket connection died');
             displayError('WebSocket connection lost. Attempting to reconnect...');
         }
 
-        // Exponential backoff for reconnection attempts
+        // Exponential backoff for reconnection
         reconnectAttempts++;
-        const reconnectDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+        const reconnectDelay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
         setTimeout(() => {
             console.log(`Reconnecting to WebSocket server as admin (attempt ${reconnectAttempts})...`);
             initializeWebSocket();
@@ -112,11 +135,11 @@ function startHeartbeat() {
                 socket.close();
             }
         }
-    }, 10000); // Send a ping every 10 seconds
+    }, 10000); // Ping every 10 seconds
 }
 
 /**
- * Updates the connection status indicator.
+ * Updates the connection status indicator (an element in your HTML).
  * @param {boolean} isConnected - True if connected, false otherwise.
  */
 function updateConnectionStatus(isConnected) {
@@ -135,76 +158,80 @@ function updateConnectionStatus(isConnected) {
 }
 
 /**
- * Displays pending images for admin review.
- * @param {Array<string>} images - Array of image URLs pending approval.
+ * Displays pending images for this admin.
+ * @param {Array<Object>} images - Array of objects, e.g. { url, lockedBy }
  */
 function displayPendingImages(images) {
-    const pendingImagesContainer = document.getElementById('pendingImages');
-    pendingImagesContainer.innerHTML = ''; // Clear existing content
+    const container = document.getElementById('pendingImages');
+    container.innerHTML = ''; // Clear existing
 
-    if (images.length === 0) {
-        const noImagesMessage = document.createElement('p');
-        noImagesMessage.textContent = 'No pending images.';
-        pendingImagesContainer.appendChild(noImagesMessage);
+    if (!images || images.length === 0) {
+        const p = document.createElement('p');
+        p.textContent = 'No pending images.';
+        container.appendChild(p);
         return;
     }
 
-    images.forEach((imageSrc) => {
-        const imageCard = document.createElement('div');
-        imageCard.classList.add('image-card');
+    images.forEach(item => {
+        const imageSrc = item.url;
+        const lockedBy = item.lockedBy; // might or might not be used in UI
 
-        const imgElement = document.createElement('img');
-        imgElement.src = imageSrc;
-        imgElement.alt = 'Pending Image';
-        imgElement.onerror = () => {
+        // Create card
+        const card = document.createElement('div');
+        card.classList.add('image-card');
+
+        // Image element
+        const img = document.createElement('img');
+        img.src = imageSrc;
+        img.alt = 'Pending Image';
+        img.onerror = () => {
             console.error(`Failed to load image: ${imageSrc}`);
-            imgElement.src = '';
+            img.src = '';
         };
+        card.appendChild(img);
 
-        // Construct the text file URL by replacing .jpg with .txt
-        const textSrc = imageSrc.replace('.jpg', '.txt');
+        // Text file
+        const textSrc = imageSrc.replace('.jpg', '.txt'); 
         const textPara = document.createElement('p');
-        textPara.textContent = 'Loading associated text...';
+        textPara.textContent = 'Loading text...';
+        card.appendChild(textPara);
 
-        imageCard.appendChild(imgElement);
-        imageCard.appendChild(textPara);
-
-        // Fetch associated text from blob storage
         fetch(textSrc)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Text file not found or inaccessible at ${textSrc}. Response status: ${response.status}`);
+            .then(resp => {
+                if (!resp.ok) {
+                    throw new Error(`Could not load text at ${textSrc}`);
                 }
-                return response.text();
+                return resp.text();
             })
-            .then(textContent => {
-                textPara.textContent = textContent;
+            .then(txt => {
+                textPara.textContent = txt;
             })
             .catch(err => {
-                console.error('Error fetching text file:', err);
-                textPara.textContent = 'Could not load associated text.';
+                console.error('Error fetching text:', err);
+                textPara.textContent = 'No text found.';
             });
 
+        // Approve / Deny
         const approveButton = document.createElement('button');
-        approveButton.textContent = 'Approve';
         approveButton.classList.add('approve-button');
-        approveButton.addEventListener('click', () => approveImage(imageSrc));
+        approveButton.textContent = 'Approve';
+        approveButton.onclick = () => approveImage(imageSrc);
 
         const denyButton = document.createElement('button');
-        denyButton.textContent = 'Deny';
         denyButton.classList.add('deny-button');
-        denyButton.addEventListener('click', () => denyImage(imageSrc));
+        denyButton.textContent = 'Deny';
+        denyButton.onclick = () => denyImage(imageSrc);
 
-        imageCard.appendChild(approveButton);
-        imageCard.appendChild(denyButton);
+        card.appendChild(approveButton);
+        card.appendChild(denyButton);
 
-        pendingImagesContainer.appendChild(imageCard);
+        container.appendChild(card);
     });
 }
 
 /**
  * Sends a request to approve an image.
- * @param {string} imageSrc - The URL of the image to approve.
+ * @param {string} imageSrc - URL of the image in pending container
  */
 function approveImage(imageSrc) {
     const data = { imagePath: imageSrc };
@@ -215,25 +242,24 @@ function approveImage(imageSrc) {
         body: JSON.stringify(data),
     })
     .then(response => {
-        if (response.ok) {
-            // Remove the approved image from the array and update the UI
-            pendingImages = pendingImages.filter(img => img !== imageSrc);
-            displayPendingImages(pendingImages);
-        } else {
+        if (!response.ok) {
             return response.text().then(text => {
-                throw new Error(text || 'Failed to approve image.');
+                throw new Error(text || 'Approval failed.');
             });
         }
+        // On success, remove that item from pendingImages and re-display
+        pendingImages = pendingImages.filter(obj => obj.url !== imageSrc);
+        displayPendingImages(pendingImages);
     })
-    .catch(error => {
-        console.error('Error approving image:', error);
-        alert(`Error approving image: ${error.message}`);
+    .catch(err => {
+        console.error('Error approving image:', err);
+        alert(`Error approving image: ${err.message}`);
     });
 }
 
 /**
  * Sends a request to deny an image.
- * @param {string} imageSrc - The URL of the image to deny.
+ * @param {string} imageSrc - URL of the image in pending container
  */
 function denyImage(imageSrc) {
     const data = { imagePath: imageSrc };
@@ -244,41 +270,39 @@ function denyImage(imageSrc) {
         body: JSON.stringify(data),
     })
     .then(response => {
-        if (response.ok) {
-            // Remove the denied image from the array and update the UI
-            pendingImages = pendingImages.filter(img => img !== imageSrc);
-            displayPendingImages(pendingImages);
-        } else {
+        if (!response.ok) {
             return response.text().then(text => {
-                throw new Error(text || 'Failed to deny image.');
+                throw new Error(text || 'Denial failed.');
             });
         }
+        // On success, remove that item from pendingImages and re-display
+        pendingImages = pendingImages.filter(obj => obj.url !== imageSrc);
+        displayPendingImages(pendingImages);
     })
-    .catch(error => {
-        console.error('Error denying image:', error);
-        alert(`Error denying image: ${error.message}`);
+    .catch(err => {
+        console.error('Error denying image:', err);
+        alert(`Error denying image: ${err.message}`);
     });
 }
 
 /**
  * Displays an error message to the user.
- * @param {string} message - The error message to display.
  */
 function displayError(message) {
-    const errorDiv = document.getElementById('errorMessage');
-    if (errorDiv) {
-        errorDiv.textContent = message;
-        errorDiv.style.display = 'block';
+    const div = document.getElementById('errorMessage');
+    if (div) {
+        div.textContent = message;
+        div.style.display = 'block';
     }
 }
 
 /**
- * Clears any existing error messages.
+ * Clears any error messages.
  */
 function clearError() {
-    const errorDiv = document.getElementById('errorMessage');
-    if (errorDiv) {
-        errorDiv.textContent = '';
-        errorDiv.style.display = 'none';
+    const div = document.getElementById('errorMessage');
+    if (div) {
+        div.textContent = '';
+        div.style.display = 'none';
     }
 }
