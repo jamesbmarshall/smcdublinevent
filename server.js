@@ -7,7 +7,7 @@ const WebSocket = require('ws');
 const multer = require('multer');
 const sharp = require('sharp');
 const path = require('path');
-const passport = require('./passport'); // Your configured Passport instance
+const passport = require('./passport'); // Import the configured Passport instance
 const { BlobServiceClient } = require('@azure/storage-blob');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -41,11 +41,10 @@ if (
 
 const app = express();
 
-// =====================================
-//      Azure Blob Service Setup
-// =====================================
+// Initialize Azure Blob Service Client
 const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING);
 
+// Define container clients
 const imagesContainerClient = blobServiceClient.getContainerClient('images');
 const pendingContainerClient = blobServiceClient.getContainerClient('pending');
 const tokensContainerClient = blobServiceClient.getContainerClient('tokens');
@@ -94,9 +93,7 @@ async function streamToBuffer(readableStream) {
     });
 }
 
-// =====================================
-//      Token Store Setup
-// =====================================
+// Initialize token store if not present
 async function initializeTokenStore() {
     const tokenBlobName = 'tokenStore.json';
     const blockBlobClient = tokensContainerClient.getBlockBlobClient(tokenBlobName);
@@ -115,15 +112,19 @@ initializeTokenStore().catch(err => {
     process.exit(1);
 });
 
+// Function to read the token store
 async function readTokenStore() {
-    const blockBlobClient = tokensContainerClient.getBlockBlobClient('tokenStore.json');
+    const tokenBlobName = 'tokenStore.json';
+    const blockBlobClient = tokensContainerClient.getBlockBlobClient(tokenBlobName);
     const downloadResponse = await blockBlobClient.download(0);
     const content = (await streamToBuffer(downloadResponse.readableStreamBody)).toString('utf8');
     return JSON.parse(content);
 }
 
+// Function to write to the token store
 async function writeTokenStore(store) {
-    const blockBlobClient = tokensContainerClient.getBlockBlobClient('tokenStore.json');
+    const tokenBlobName = 'tokenStore.json';
+    const blockBlobClient = tokensContainerClient.getBlockBlobClient(tokenBlobName);
     const updatedContent = JSON.stringify(store, null, 2);
     try {
         await blockBlobClient.uploadData(Buffer.from(updatedContent), {
@@ -132,23 +133,23 @@ async function writeTokenStore(store) {
         console.log('Token store updated successfully.');
     } catch (error) {
         console.error('Failed to write token store:', error);
-        throw error;
+        throw error; // Re-throw to be caught by outer try-catch
     }
 }
 
-// =====================================
-//      In-Memory Distribution Logic
-// =====================================
-
+// ================
+//  In-Memory Logic
+// ================
+// Store for newly uploaded images that we want to distribute among admins
 // Each item: { blobName, lockedBy: string|null, lockedAt: number|null }
 let inMemoryPending = [];
 
-// Keep track of how many images each admin is assigned
+// Keep track of how many images each admin is assigned, so we can distribute
 const adminLoadMap = {};
 
 // Recompute admin load counts
 function rebuildAdminLoadCounts() {
-    // Clear existing counts
+    // Clear
     for (const key in adminLoadMap) {
         adminLoadMap[key] = 0;
     }
@@ -161,20 +162,20 @@ function rebuildAdminLoadCounts() {
 }
 
 function getAllConnectedAdminIds() {
-    return Array.from(adminClientsMap.values()); // adminClientsMap: WebSocket -> adminId
+    return Array.from(adminClientsMap.values());
 }
 
 /**
- * Distributes unassigned items (lockedBy === null) to whichever admin 
- * currently has the fewest assigned items.
+ * Distributes unassigned items to whichever admin has the fewest assigned items.
  */
 function distributeNewItems() {
     const admins = getAllConnectedAdminIds();
-    if (admins.length === 0) return; // No admins connected
+    if (admins.length === 0) return;
 
+    // Rebuild counts first
     rebuildAdminLoadCounts();
 
-    // Assign each unclaimed item to the least-loaded admin
+    // For each unclaimed item, find the admin with the smallest load
     for (const item of inMemoryPending) {
         if (!item.lockedBy) {
             let targetAdmin = null;
@@ -191,21 +192,18 @@ function distributeNewItems() {
                 item.lockedBy = targetAdmin;
                 item.lockedAt = Date.now();
                 adminLoadMap[targetAdmin] = (adminLoadMap[targetAdmin] || 0) + 1;
-                console.log(`Assigned ${item.blobName} to admin ${targetAdmin}`);
             }
         }
     }
 }
 
-// =====================================
-//      Express + Passport + Helmet
-// =====================================
+// Session configuration
 app.use(
     session({
         secret: SESSION_SECRET,
         resave: false,
         saveUninitialized: false,
-        cookie: {
+        cookie: { 
             secure: process.env.NODE_ENV === 'production',
             httpOnly: true,
             sameSite: 'lax'
@@ -213,25 +211,26 @@ app.use(
     })
 );
 
+// Initialize Passport and restore authentication state
 app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(
     helmet({
-        contentSecurityPolicy: {
-            useDefaults: true,
-            directives: {
-                "img-src": [
-                    "'self'",
-                    "data:",
-                    `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
-                ],
-                "connect-src": [
-                    "'self'",
-                    `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
-                ],
-            },
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          "img-src": [
+            "'self'",
+            "data:",
+            `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
+          ],
+          "connect-src": [
+            "'self'",
+            `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net`
+          ],
         },
+      },
     })
 );
 app.use(cors());
@@ -240,9 +239,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// =====================================
-//  Multer Setup for Image Uploads
-// =====================================
+// Multer setup for image uploads
 const storage = multer.memoryStorage();
 const uploadMulter = multer({
     storage,
@@ -255,11 +252,7 @@ const uploadMulter = multer({
     }
 });
 
-// =====================================
-//  Public Endpoints
-// =====================================
-
-/** Return a random approved image */
+// Public endpoint to get a random approved image and its associated text
 app.get('/random-image', async (req, res) => {
     try {
         const blobs = await listBlobs(imagesContainerClient);
@@ -269,18 +262,17 @@ app.get('/random-image', async (req, res) => {
         }
         const randomImage = imageBlobs[Math.floor(Math.random() * imageBlobs.length)];
         const imageUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/images/${encodeURIComponent(randomImage)}`;
-
-        // Derive the text filename
+        
         const baseName = randomImage.substring(0, randomImage.lastIndexOf('.'));
         const textFilename = `${baseName}.txt`;
         const textBlobClient = imagesContainerClient.getBlockBlobClient(textFilename);
         const textExists = await textBlobClient.exists();
-
+        
         if (!textExists) {
             console.warn(`Associated text file ${textFilename} not found for image ${randomImage}.`);
             return res.status(404).json({ error: 'Associated text file not found.' });
         }
-
+        
         const textUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/images/${encodeURIComponent(textFilename)}`;
         res.json({ image: imageUrl, text: textUrl });
     } catch (error) {
@@ -289,14 +281,7 @@ app.get('/random-image', async (req, res) => {
     }
 });
 
-app.get('/', (req, res) => {
-    res.redirect('index.html');
-});
-
-// =====================================
-//  Auth + Admin Routes
-// =====================================
-
+// Authentication middleware
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) {
         return next();
@@ -304,29 +289,37 @@ function ensureAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
+// Admin authentication middleware
 function requireAdminAuth(req, res, next) {
     if (req.session && req.session.isAdmin) return next();
     return res.status(403).send(`
-        <!DOCTYPE html>
-        <html lang="en">
-        <link rel="stylesheet" href="/styles/styles.css">
-        <title>Admin Login</title>
-        </head>
-        <body>
-            <h1>Admin</h1>
-            <p>Access denied. Not authenticated as an admin.</p>
-        </body>
-        </html>
-    `);
+            <!DOCTYPE html>
+            <html lang="en">
+            <link rel="stylesheet" href="/styles/styles.css">
+            <title>Admin Login</title>
+            </head>
+            <body>
+                <h1>Admin</h1>
+                <p>Access denied. Not authenticated as an admin.</p>
+                 <span id="footer"><a href="https://go.microsoft.com/fwlink/?linkid=2259814">Consumer Health Privacy</a> | <a href="https://go.microsoft.com/fwlink/?LinkedId=521839">Privacy & Cookies</a> | <a href="https://go.microsoft.com/fwlink/?LinkID=206977">Terms Of Use</a> | <a href="https://go.microsoft.com/fwlink/?linkid=2196228">Trademarks</a> | &copy; Microsoft 2025</span>
+            </body>
+            </html>
+        `);
 }
 
+// Serve static files
+app.use(express.static(path.join(__dirname, 'public'), {
+    extensions: ['html']
+}));
+
+// Authentication Routes
 app.get('/login', passport.authenticate('microsoft'));
 app.get(
     '/auth/microsoft/callback',
     passport.authenticate('microsoft', { failureRedirect: '/login' }),
     async (req, res) => {
         try {
-            const userToken = req.user.id;
+            const userToken = req.user.id; 
             req.userToken = userToken;
 
             const store = await readTokenStore();
@@ -335,104 +328,119 @@ app.get(
             }
             res.redirect('/upload');
         } catch (error) {
-            console.error('Error during auth callback:', error);
+            console.error('Error during authentication callback:', error);
             res.status(500).send('Authentication error.');
         }
     }
 );
 
+// Logout Route (Optional)
 app.get('/logout', (req, res) => {
     req.logout(() => {
         res.redirect('/');
     });
 });
 
+// Public Routes
+app.get('/', (req, res) => {
+    res.redirect('index.html');
+});
+
+// Protected Upload Routes
 app.get('/upload', ensureAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'protected-user', 'upload.html'));
 });
 
-// =====================================
-//   Upload Endpoint (In-Memory Dist.)
-// =====================================
-app.post('/upload-image', ensureAuthenticated, uploadMulter.single('image'), async (req, res) => {
-    try {
-        const userToken = req.user.id;
-        const store = await readTokenStore();
+// 1) Insert newly uploaded item into inMemory + auto-distribute
+app.post(
+    '/upload-image',
+    ensureAuthenticated,
+    uploadMulter.single('image'),
+    async (req, res) => {
+        try {
+            const userToken = req.user.id;
+            const store = await readTokenStore();
 
-        if (store[userToken] === true) {
-            console.warn(`User with ID ${userToken} tried multiple submissions.`);
-            return res.status(403).send('You have already submitted a response.');
+            if (store[userToken] === true) {
+                console.warn(`User with ID ${userToken} attempted multiple submissions.`);
+                return res.status(403).send('You have already submitted a response.');
+            }
+
+            const textContentRaw = req.body.text;
+            if (!req.file) {
+                console.warn('Upload attempt without image file.');
+                return res.status(400).send('No file uploaded.');
+            }
+            if (!textContentRaw) {
+                console.warn('Upload attempt without text content.');
+                return res.status(400).send('No text content provided.');
+            }
+            if (textContentRaw.length > 1000) {
+                console.warn('Upload attempt with excessively long text.');
+                return res.status(400).send('Text too long.');
+            }
+
+            const textContent = textContentRaw.replace(/<[^>]*>?/gm, '');
+            const imageBuffer = req.file.buffer;
+            const image = sharp(imageBuffer);
+            const metadata = await image.metadata();
+            if (metadata.width !== metadata.height) {
+                console.warn('Uploaded image is not square.');
+                return res.status(400).send('Image must be square.');
+            }
+
+            const timestamp = Date.now();
+            const baseFilename = `image_${timestamp}`;
+            const imageFilename = `${baseFilename}.jpg`;
+            const textFilename = `${baseFilename}.txt`;
+
+            // Upload .jpg to 'pending'
+            const imageBlobClient = pendingContainerClient.getBlockBlobClient(imageFilename);
+            await imageBlobClient.uploadData(imageBuffer, {
+                blobHTTPHeaders: { blobContentType: req.file.mimetype },
+            });
+            console.log(`Uploaded image: ${imageFilename} to 'pending' container.`);
+
+            // Upload .txt to 'pending'
+            const textBlobClient = pendingContainerClient.getBlockBlobClient(textFilename);
+            await textBlobClient.uploadData(Buffer.from(textContent), {
+                blobHTTPHeaders: { blobContentType: 'text/plain' },
+            });
+            console.log(`Uploaded text file: ${textFilename} to 'pending' container.`);
+
+            // Mark user as having submitted
+            store[userToken] = true;
+            await writeTokenStore(store);
+
+            // 2) Insert into inMemoryPending
+            inMemoryPending.push({
+                blobName: imageFilename,
+                lockedBy: null,
+                lockedAt: null
+            });
+
+            // 3) Distribute newly added item to an admin with fewest load
+            distributeNewItems();
+
+            console.log(`User with ID ${userToken} marked as submitted.`);
+            broadcastPendingImages();
+
+            res.status(200).send('Image and text uploaded successfully and are pending approval.');
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            res.status(500).send('Server error occurred.');
         }
-
-        const textContentRaw = req.body.text;
-        if (!req.file) {
-            return res.status(400).send('No file uploaded.');
-        }
-        if (!textContentRaw) {
-            return res.status(400).send('No text content provided.');
-        }
-        if (textContentRaw.length > 1000) {
-            return res.status(400).send('Text too long.');
-        }
-
-        const textContent = textContentRaw.replace(/<[^>]*>?/gm, '');
-        const imageBuffer = req.file.buffer;
-        const image = sharp(imageBuffer);
-        const metadata = await image.metadata();
-        if (metadata.width !== metadata.height) {
-            return res.status(400).send('Image must be square.');
-        }
-
-        const timestamp = Date.now();
-        const baseFilename = `image_${timestamp}`;
-        const imageFilename = `${baseFilename}.jpg`;
-        const textFilename = `${baseFilename}.txt`;
-
-        // Upload to pending
-        const imageBlobClient = pendingContainerClient.getBlockBlobClient(imageFilename);
-        await imageBlobClient.uploadData(imageBuffer, {
-            blobHTTPHeaders: { blobContentType: req.file.mimetype },
-        });
-        console.log(`Uploaded image: ${imageFilename} to 'pending' container.`);
-
-        const textBlobClient = pendingContainerClient.getBlockBlobClient(textFilename);
-        await textBlobClient.uploadData(Buffer.from(textContent), {
-            blobHTTPHeaders: { blobContentType: 'text/plain' },
-        });
-        console.log(`Uploaded text file: ${textFilename} to 'pending' container.`);
-
-        // Mark user as having submitted
-        store[userToken] = true;
-        await writeTokenStore(store);
-
-        // Insert into inMemory, then distribute
-        inMemoryPending.push({
-            blobName: imageFilename,
-            lockedBy: null,
-            lockedAt: null
-        });
-
-        distributeNewItems(); // Actually assign it to an admin
-
-        console.log(`User with ID ${userToken} submitted an item: ${imageFilename}`);
-        broadcastPendingImages(); // Let admins see updated distribution
-
-        res.status(200).send('Image and text uploaded successfully and are pending approval.');
-    } catch (error) {
-        console.error('Error uploading image:', error);
-        res.status(500).send('Server error occurred.');
     }
-});
+);
 
-// =====================================
-//  Admin Routes + Login + Logout
-// =====================================
+// Rate limit
 const adminLoginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
-    message: 'Too many login attempts. Try again later.'
+    message: 'Too many login attempts from this IP. Please try again later.'
 });
 
+// Admin login route
 app.post('/admin/login', adminLoginLimiter, (req, res) => {
     const { password } = req.body;
     if (password === ADMIN_PASSWORD) {
@@ -445,6 +453,7 @@ app.post('/admin/login', adminLoginLimiter, (req, res) => {
     }
 });
 
+// Admin logout route
 app.post('/admin/logout', requireAdminAuth, (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -457,17 +466,19 @@ app.post('/admin/logout', requireAdminAuth, (req, res) => {
             <!DOCTYPE html>
             <html lang="en">
             <link rel="stylesheet" href="/styles/styles.css">
-            <title>Admin Logout</title>
+            <title>Admin Login</title>
             </head>
             <body>
                 <h1>Admin Logout</h1>
                 <p>Logged out successfully.</p>
+                 <span id="footer"><a href="https://go.microsoft.com/fwlink/?linkid=2259814">Consumer Health Privacy</a> | <a href="https://go.microsoft.com/fwlink/?LinkedId=521839">Privacy & Cookies</a> | <a href="https://go.microsoft.com/fwlink/?LinkID=206977">Terms Of Use</a> | <a href="https://go.microsoft.com/fwlink/?linkid=2196228">Trademarks</a> | &copy; Microsoft 2025</span>
             </body>
             </html>
         `);
     });
 });
 
+// Serve admin page
 app.get('/admin', (req, res) => {
     if (req.session && req.session.isAdmin) {
         return res.sendFile(path.join(__dirname, 'protected-admin', 'admin.html'));
@@ -484,38 +495,36 @@ app.get('/admin', (req, res) => {
                     <input type="password" name="password" placeholder="Admin Password" required>
                     <button type="submit">Login</button>
                 </form>
+                 <span id="footer"><a href="https://go.microsoft.com/fwlink/?linkid=2259814">Consumer Health Privacy</a> | <a href="https://go.microsoft.com/fwlink/?LinkedId=521839">Privacy & Cookies</a> | <a href="https://go.microsoft.com/fwlink/?LinkID=206977">Terms Of Use</a> | <a href="https://go.microsoft.com/fwlink/?linkid=2196228">Trademarks</a> | &copy; Microsoft 2025</span>
             </body>
             </html>
         `);
     }
 });
 
-/**
- * (Optional) If you want an HTTP route that returns a global list of in-memory items 
- * (for debugging or an alternative approach) 
- * Instead of listing from Azure, read from inMemoryPending:
- */
-app.get('/admin/pending-images', requireAdminAuth, (req, res) => {
-    // Return all items in memory, ignoring lockedBy or return only unclaimed
-    // If you want only unclaimed => filter: item.lockedBy === null
-    // If you want all => no filter
-
-    // Example: returning everything:
-    const allInMemory = inMemoryPending.map(item => ({
-        url: `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(item.blobName)}`,
-        lockedBy: item.lockedBy
-    }));
-    res.json({ pendingImages: allInMemory });
+// Admin endpoint to fetch pending images
+app.get('/admin/pending-images', requireAdminAuth, async (req, res) => {
+    try {
+        // STILL listing from Azure so existing logic isn't broken
+        const blobs = await listBlobs(pendingContainerClient);
+        const imageBlobs = blobs.filter(blob => blob.endsWith('.jpg'));
+        const images = imageBlobs.map(blob =>
+            `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(blob)}`
+        );
+        res.json({ pendingImages: images });
+    } catch (error) {
+        console.error('Error fetching pending images:', error);
+        res.status(500).json({ error: 'Failed to fetch pending images.' });
+    }
 });
 
-// =====================================
-//   Approve/Deny Logic
-// =====================================
+// Helper function to wait for a blob to appear in the destination container
 async function waitForBlobExistence(containerClient, blobName, description) {
     let exists = false;
     let attempts = 0;
     const maxAttempts = 30;
     const interval = 1000;
+
     while (!exists && attempts < maxAttempts) {
         attempts++;
         try {
@@ -529,11 +538,13 @@ async function waitForBlobExistence(containerClient, blobName, description) {
         }
         await new Promise(r => setTimeout(r, interval));
     }
+
     if (!exists) {
         throw new Error(`${description} copy did not complete in time.`);
     }
 }
 
+// Admin approve image endpoint
 app.post('/admin/approve-image', requireAdminAuth, async (req, res) => {
     const { imagePath } = req.body;
     if (!imagePath) {
@@ -548,39 +559,42 @@ app.post('/admin/approve-image', requireAdminAuth, async (req, res) => {
 
         console.log(`Approving image: ${filename} and text: ${textFilename}`);
 
-        // Copy from pending -> images
         const sourceImageBlob = pendingContainerClient.getBlockBlobClient(filename);
         const destImageBlob = imagesContainerClient.getBlockBlobClient(filename);
+
         const imageExists = await sourceImageBlob.exists();
         if (!imageExists) {
             throw new Error(`Image file ${filename} not found in 'pending' container.`);
         }
 
         const imageUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(filename)}`;
+        console.log(`Starting image copy from ${imageUrl} to ${destImageBlob.url}`);
+
         await destImageBlob.startCopyFromURL(imageUrl);
+        console.log(`Image copy initiated for ${filename}. Waiting...`);
         await waitForBlobExistence(imagesContainerClient, filename, 'Image');
 
         const sourceTextBlob = pendingContainerClient.getBlockBlobClient(textFilename);
+        const destTextBlob = imagesContainerClient.getBlockBlobClient(textFilename);
         const textExists = await sourceTextBlob.exists();
         if (!textExists) {
             throw new Error(`Text file ${textFilename} not found in 'pending' container.`);
         }
         const textUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(textFilename)}`;
-        await (await imagesContainerClient.getBlockBlobClient(textFilename)).startCopyFromURL(textUrl);
+        console.log(`Starting text file copy from ${textUrl} to ${destTextBlob.url}`);
+        await destTextBlob.startCopyFromURL(textUrl);
+        console.log(`Text file copy initiated for ${textFilename}. Waiting...`);
         await waitForBlobExistence(imagesContainerClient, textFilename, 'Text file');
 
         console.log('Both copies succeeded. Deleting source blobs...');
         await sourceImageBlob.deleteIfExists();
         await sourceTextBlob.deleteIfExists();
-
-        console.log(`Deleted image: ${filename} and text: ${textFilename} from 'pending'`);
-
-        // Also remove from inMemoryPending
-        inMemoryPending = inMemoryPending.filter(item => item.blobName !== filename);
+        console.log(`Deleted image: ${filename} and text: ${textFilename}`);
 
         broadcastNewImages();
         broadcastPendingImages();
 
+        console.log('Image approved successfully.');
         res.status(200).send('Image approved successfully.');
     } catch (error) {
         console.error('Error approving image:', error);
@@ -588,6 +602,7 @@ app.post('/admin/approve-image', requireAdminAuth, async (req, res) => {
     }
 });
 
+// Admin deny image endpoint
 app.post('/admin/deny-image', requireAdminAuth, async (req, res) => {
     const { imagePath } = req.body;
     if (!imagePath) {
@@ -600,17 +615,16 @@ app.post('/admin/deny-image', requireAdminAuth, async (req, res) => {
         const baseName = path.parse(filename).name;
         const textFilename = `${baseName}.txt`;
 
-        console.log(`Denying image: ${filename} and text: ${textFilename}`);
-
         const pendingImageBlob = pendingContainerClient.getBlockBlobClient(filename);
         const pendingTextBlob = pendingContainerClient.getBlockBlobClient(textFilename);
 
-        await pendingImageBlob.deleteIfExists();
-        await pendingTextBlob.deleteIfExists();
-        console.log(`Deleted image: ${filename} and text: ${textFilename} from 'pending' container.`);
+        console.log(`Denying image: ${filename} and text: ${textFilename}`);
 
-        // Remove from inMemory
-        inMemoryPending = inMemoryPending.filter(item => item.blobName !== filename);
+        await pendingImageBlob.deleteIfExists();
+        console.log(`Deleted image: ${filename} from 'pending' container.`);
+
+        await pendingTextBlob.deleteIfExists();
+        console.log(`Deleted text file: ${textFilename} from 'pending' container.`);
 
         broadcastPendingImages();
         res.status(200).send('Image and associated text denied and removed.');
@@ -620,9 +634,7 @@ app.post('/admin/deny-image', requireAdminAuth, async (req, res) => {
     }
 });
 
-// =====================================
-//  get-images for the public gallery
-// =====================================
+// Public endpoint to get all approved images and their associated texts
 app.get('/get-images', async (req, res) => {
     try {
         const blobs = await listBlobs(imagesContainerClient);
@@ -631,39 +643,40 @@ app.get('/get-images', async (req, res) => {
 
         for (const imageBlob of imageBlobs) {
             const imageUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/images/${encodeURIComponent(imageBlob)}`;
+            
             const baseName = imageBlob.substring(0, imageBlob.lastIndexOf('.'));
             const textFilename = `${baseName}.txt`;
             const textBlobClient = imagesContainerClient.getBlockBlobClient(textFilename);
             const textExists = await textBlobClient.exists();
-
+            
             if (textExists) {
                 const textUrl = `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/images/${encodeURIComponent(textFilename)}`;
                 imagesWithTexts.push({ image: imageUrl, text: textUrl });
             } else {
                 imagesWithTexts.push({ image: imageUrl, text: null });
+                console.warn(`No associated text file found for image: ${imageBlob}`);
             }
         }
+
         res.json({ images: imagesWithTexts });
     } catch (error) {
-        console.error('Error fetching images and texts:', error);
-        res.status(500).json({ error: 'Failed to fetch images.' });
+        console.error('Error fetching approved images and texts:', error);
+        res.status(500).json({ error: 'Failed to fetch approved images and texts.' });
     }
 });
 
-// =====================================
-//  Start the Server
-// =====================================
 const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-// =====================================
-//   WebSocket Setup for Admin Dist.
-// =====================================
+// WebSocket Setup
 const wss = new WebSocket.Server({ server });
-const clients = new Set();       // Non-admin clients
-const adminClients = new Set();  // Admin clients
-const adminClientsMap = new Map(); // WebSocket -> adminId
+const clients = new Set();
+const adminClients = new Set();
+
+// For "automatic distribution," we need to identify each admin
+// so we can store lockedBy. We'll keep a map from WebSocket -> adminId
+const adminClientsMap = new Map();
 
 wss.on('connection', ws => {
     console.log('WebSocket client connected.');
@@ -671,62 +684,58 @@ wss.on('connection', ws => {
     ws.on('message', async message => {
         try {
             const data = JSON.parse(message);
-
             if (data.type === 'admin') {
                 console.log('Admin WebSocket client connected.');
 
-                // Generate an adminId
+                // Generate a simple unique adminId
                 const adminId = `admin_${Math.random().toString(36).substr(2, 9)}`;
                 adminClientsMap.set(ws, adminId);
+                ws.send(JSON.stringify({ type: 'initAdminId', adminId }));
                 adminClients.add(ws);
 
-                // Immediately send that ID
-                ws.send(JSON.stringify({ type: 'initAdminId', adminId }));
+                console.log(`Current Admin Clients: ${adminClients.size}, Current Clients: ${clients.size}`);
 
-                console.log(`AdminClients: ${adminClients.size}, Clients: ${clients.size}`);
-                distributeNewItems();  // Assign any unclaimed items
-                await sendPendingImages(ws); // Send the locked items to this new admin
-            }
-            else if (data.type === 'ping') {
+                // Attempt to distribute any unassigned items
+                distributeNewItems();
+
+                // Send pending images from container, unchanged
+                await sendPendingImages(ws);
+            } else if (data.type === 'ping') {
                 ws.send(JSON.stringify({ type: 'pong' }));
-            }
-            else {
-                // It's a normal client
+            } else {
                 clients.add(ws);
-                console.log(`Regular client connected. AdminClients: ${adminClients.size}, Clients: ${clients.size}`);
-                await sendImages(ws); // Send them the public images
+                console.log(`Regular client connected. Current Admin Clients: ${adminClients.size}, Current Clients: ${clients.size}`);
+                await sendImages(ws);
             }
         } catch (error) {
-            console.error('Error parsing WebSocket message:', error);
+            console.error('Error parsing message from WebSocket client:', error);
         }
     });
 
     ws.on('close', () => {
-        // On close, remove from sets
         adminClients.delete(ws);
         clients.delete(ws);
 
-        // If it was an admin, unlock their items
+        // If it was an admin, remove from the map
         const adminId = adminClientsMap.get(ws);
         if (adminId) {
             adminClientsMap.delete(ws);
+            // Optionally, unlock items assigned to them
             inMemoryPending.forEach(item => {
                 if (item.lockedBy === adminId) {
                     item.lockedBy = null;
                     item.lockedAt = null;
                 }
             });
-            distributeNewItems(); // Redistribute newly unlocked items
+            distributeNewItems();
         }
 
-        console.log('WebSocket client disconnected.');
-        console.log(`AdminClients: ${adminClients.size}, Clients: ${clients.size}`);
+        console.log(`WebSocket client disconnected.`);
+        console.log(`Current Admin Clients: ${adminClients.size}, Current Clients: ${clients.size}`);
     });
 });
 
-/**
- * Sends all *approved* images (the ones in the images container) to a normal client
- */
+// Function to send all approved images to a WebSocket client
 async function sendImages(ws) {
     try {
         const blobs = await listBlobs(imagesContainerClient);
@@ -741,25 +750,28 @@ async function sendImages(ws) {
     }
 }
 
-/**
- * Sends items from inMemoryPending that are *locked* to this admin
- */
+// Function to send all pending images to an admin WebSocket client (still uses Azure listing)
+// Example snippet for server.js
+
 async function sendPendingImages(ws) {
     try {
+        // Get this admin's ID from the map
         const adminId = adminClientsMap.get(ws);
         if (!adminId) {
             ws.send(JSON.stringify({ pendingImages: [] }));
             return;
         }
 
-        // Filter by lockedBy
+        // Filter only items locked to this admin in memory
         const lockedItems = inMemoryPending.filter(item => item.lockedBy === adminId);
 
+        // Convert each locked item into an object with { url, lockedBy }
         const images = lockedItems.map(item => ({
             url: `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(item.blobName)}`,
             lockedBy: item.lockedBy
         }));
 
+        // Send that array to the admin client
         ws.send(JSON.stringify({ pendingImages: images }));
     } catch (error) {
         console.error('Error sending locked images:', error);
@@ -767,9 +779,7 @@ async function sendPendingImages(ws) {
     }
 }
 
-/**
- * Broadcast new *approved* images to all non-admin clients
- */
+// Broadcast new approved images to all non-admin clients
 async function broadcastNewImages() {
     try {
         const blobs = await listBlobs(imagesContainerClient);
@@ -779,7 +789,6 @@ async function broadcastNewImages() {
         );
         const message = JSON.stringify({ images });
 
-        // Send to all normal clients
         clients.forEach(client => {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(message);
@@ -790,11 +799,22 @@ async function broadcastNewImages() {
     }
 }
 
-/**
- * Instead of re-listing from Azure, we just re-send each admin *their* items 
- */
+// Broadcast updated pending images to all admin clients, as before
 async function broadcastPendingImages() {
-    adminClients.forEach(async (ws) => {
-        await sendPendingImages(ws);
-    });
+    try {
+        const blobs = await listBlobs(pendingContainerClient);
+        const imageBlobs = blobs.filter(blob => blob.endsWith('.jpg'));
+        const images = imageBlobs.map(blob =>
+            `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(blob)}`
+        );
+        const message = JSON.stringify({ pendingImages: images });
+
+        adminClients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(message);
+            }
+        });
+    } catch (error) {
+        console.error('Error broadcasting pending images:', error);
+    }
 }
