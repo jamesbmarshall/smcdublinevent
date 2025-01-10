@@ -750,27 +750,28 @@ async function sendImages(ws) {
 }
 
 // Function to send all pending images to an admin WebSocket client (still uses Azure listing)
+// Example snippet for server.js
+
 async function sendPendingImages(ws) {
     try {
-        // 1) Get this admin's ID
+        // Get this admin's ID from the map
         const adminId = adminClientsMap.get(ws);
         if (!adminId) {
-            // If we don't have an ID, do nothing
             ws.send(JSON.stringify({ pendingImages: [] }));
             return;
         }
 
-        // 2) Filter only items locked to this admin
+        // Filter only items locked to this admin in memory
         const lockedItems = inMemoryPending.filter(item => item.lockedBy === adminId);
 
-        // 3) Convert to full pending URLs
-        const images = lockedItems.map(item =>
-            `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(item.blobName)}`
-        );
+        // Convert each locked item into an object with { url, lockedBy }
+        const images = lockedItems.map(item => ({
+            url: `https://${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net/pending/${encodeURIComponent(item.blobName)}`,
+            lockedBy: item.lockedBy
+        }));
 
-        // 4) Send those to the admin
+        // Send that array to the admin client
         ws.send(JSON.stringify({ pendingImages: images }));
-
     } catch (error) {
         console.error('Error sending locked images:', error);
         ws.send(JSON.stringify({ error: 'Failed to fetch locked images.' }));
