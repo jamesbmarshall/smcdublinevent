@@ -686,6 +686,7 @@ wss.on('connection', ws => {
             const data = JSON.parse(message);
             if (data.type === 'admin') {
                 console.log('Admin WebSocket client connected.');
+                ws.send(JSON.stringify({ type: 'initAdminId', adminId }));
                 adminClients.add(ws);
 
                 // Generate a simple unique adminId
