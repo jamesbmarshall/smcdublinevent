@@ -175,6 +175,9 @@ async function fetchImages() {
  * - The gallery container uses role="list" since it's a set of related items.
  * - Each gallery item uses role="listitem".
  * - Each image has a descriptive alt text. If textual prompt is fetched, alt updates to that text.
+ * 
+ * **Additional Feature:**
+ * - Displays the filename of the image under the image.
  */
 function renderGallery(images) {
     const gallery = document.getElementById('gallery');
@@ -220,6 +223,20 @@ function renderGallery(images) {
 
         itemDiv.appendChild(img);
 
+        // **New Section: Display Filename**
+        if (item.image) {
+            const filename = extractFilenameFromURL(item.image);
+            const filenamePara = document.createElement('p');
+            filenamePara.classList.add('filename');
+            filenamePara.textContent = `Filename: ${filename}`;
+            itemDiv.appendChild(filenamePara);
+        } else {
+            const filenamePara = document.createElement('p');
+            filenamePara.classList.add('filename');
+            filenamePara.textContent = `Filename: N/A`;
+            itemDiv.appendChild(filenamePara);
+        }
+
         // Create and append the associated text
         const textPara = document.createElement('p');
         if (item.text) {
@@ -254,6 +271,21 @@ function renderGallery(images) {
 
     // Initialize lazy loading after gallery is populated
     initializeLazyLoading();
+}
+
+/**
+ * Extracts the filename from a given URL.
+ * @param {string} url - The URL string from which to extract the filename.
+ * @returns {string} - The extracted filename.
+ */
+function extractFilenameFromURL(url) {
+    try {
+        const urlObj = new URL(url);
+        return decodeURIComponent(urlObj.pathname.split('/').pop());
+    } catch (error) {
+        console.error('Error extracting filename from URL:', error);
+        return 'Unknown Filename';
+    }
 }
 
 /**
