@@ -228,7 +228,7 @@ function renderGallery(images) {
             const filename = extractFilenameFromURL(item.image);
             const filenamePara = document.createElement('p');
             filenamePara.classList.add('filename');
-            filenamePara.textContent = `Filename: ${filename}`;
+            filenamePara.textContent = `File: ${filename}`;
             itemDiv.appendChild(filenamePara);
         } else {
             const filenamePara = document.createElement('p');

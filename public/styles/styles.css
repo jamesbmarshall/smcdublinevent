@@ -549,8 +549,8 @@ body.non-index-page {
 
 /* Filename Styling */
 .filename {
-    font-size: 0.5em;
-    color: #555;
+    font-size: 0.2em;
+    color: #000;
     margin-top: 5px;
     word-break: break-all; /* Ensures long filenames wrap appropriately */
 }
