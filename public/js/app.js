@@ -62,9 +62,8 @@ function connectWebSocket() {
                 missedPongs = 0; // Reset missed pongs counter
             } else if (data.images) {
                 // Received an array of image URLs
-                const newImages = data.images.slice(0, maxImages); 
-                console.log('Received images:', newImages);
-                updateImages(newImages);
+                console.log('Received images:', data.images);
+                updateImages(data.images);
             }
         } catch (error) {
             console.error('Error parsing WebSocket message:', error);
@@ -116,7 +115,7 @@ function startHeartbeat() {
 }
 
 function updateImages(newImages) {
-    images = newImages;
+    images = newImages.concat(newImages);
     updateImageCount();
     drawImages();
 }
@@ -154,19 +153,25 @@ function drawImages() {
         return;
     }
 
-    const numImages = images.length;
-    const gridSize = Math.ceil(Math.sqrt(numImages));
+    // Determine the number of images to draw, up to maxImages
+    const numImagesToDraw = Math.min(images.length, maxImages);
+
+    const gridSize = Math.ceil(Math.sqrt(numImagesToDraw));
     const imageSize = Math.min(offCanvas.width / gridSize, offCanvas.height / gridSize);
 
     // Clear off-screen canvas if grid size changed
     if (gridSize !== prevGridSize) {
         console.log('Grid size changed, clearing off-screen canvas');
         offCtx.clearRect(0, 0, offCanvas.width, offCanvas.height);
+        prevGridSize = gridSize; // Update prevGridSize
     } else {
         console.log('Grid size unchanged, not clearing off-screen canvas');
     }
 
-    loadAllImages(images).then(loadedImages => {
+    // Get the images to draw, up to maxImages
+    const imagesToDraw = images.slice(0, numImagesToDraw);
+
+    loadAllImages(imagesToDraw).then(loadedImages => {
         loadedImages.forEach(({ img }, index) => {
             if (img) {
                 const col = index % gridSize;
@@ -180,9 +185,6 @@ function drawImages() {
         // Draw from off-screen to the visible canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.drawImage(offCanvas, 0, 0);
-
-        // Update prevGridSize
-        prevGridSize = gridSize;
     }).catch(error => {
         console.error('Error drawing images:', error);
     });
