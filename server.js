@@ -380,7 +380,7 @@ app.post('/upload-image', ensureAuthenticated, uploadMulter.single('image'), asy
 // Rate-limit admin login attempts
 const adminLoginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 5,
+    max: 10,
     message: 'Too many admin login attempts. Wait 15 min.'
 });
 
