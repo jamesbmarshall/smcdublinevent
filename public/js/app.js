@@ -35,6 +35,8 @@ let socket;
 let reconnectAttempts = 0;
 let heartbeatInterval;
 let missedPongs = 0;
+let totalImagesReceived = 0;
+
 const maxMissedPongs = 3; // Number of missed pongs before considering the connection lost
 
 function connectWebSocket() {
@@ -115,7 +117,8 @@ function startHeartbeat() {
 }
 
 function updateImages(newImages) {
-    images = newImages.concat(newImages);
+    totalImagesReceived += newImages.length; // Increment total images received.
+    images = newImages;
     updateImageCount();
     drawImages();
 }
@@ -123,9 +126,10 @@ function updateImages(newImages) {
 function updateImageCount() {
     const imageCountElement = document.getElementById('imageCount');
     if (imageCountElement) {
-        imageCountElement.textContent = `Images: ${images.length}`;
+        imageCountElement.textContent = `Images: ${totalImagesReceived}`;
     }
 }
+
 
 // Load all images from provided URLs
 function loadAllImages(imageSources) {
