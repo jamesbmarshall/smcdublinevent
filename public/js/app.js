@@ -117,18 +117,19 @@ function startHeartbeat() {
 }
 
 function updateImages(newImages) {
-    totalImagesReceived += newImages.length; // Increment total images received.
-    images = newImages;
+    images = newImages.slice(); // Replace images with a copy of newImages
     updateImageCount();
     drawImages();
 }
 
+
 function updateImageCount() {
     const imageCountElement = document.getElementById('imageCount');
     if (imageCountElement) {
-        imageCountElement.textContent = `Images: ${totalImagesReceived}`;
+        imageCountElement.textContent = `Images: ${images.length}`;
     }
 }
+
 
 
 // Load all images from provided URLs
